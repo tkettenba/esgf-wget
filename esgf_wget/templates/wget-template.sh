@@ -112,6 +112,7 @@ while getopts ':c:pfF:o:w:isuUndvqhHI:T' OPT; do
     case $OPT in
         F) input_file="$OPTARG";;       #<file> : read input from file instead of the embedded one (use - to read from stdin)
         w) output="$OPTARG";;           #<file> : Write embedded files into a file and exit
+        i) insecure=1;;                 #       : set insecure mode, i.e. don't check server certificate
         u) update=1;;                   #       : Issue the search again and see if something has changed.
         U) update_files=1;;             #       : Update files from server overwriting local ones (detect with -u)
         n) dry_run=1;;                  #       : Don't download any files, just report.
@@ -224,7 +225,7 @@ remove_from_cache() {
 }
 
 download() {
-    wget="wget ${quiet:+-q} ${quiet:--v}"
+    wget="wget ${insecure:+--no-check-certificate} ${quiet:+-q} ${quiet:--v}"
     
     while read line
     do
