@@ -9,7 +9,7 @@ import urllib.parse
 import datetime
 import json
 
-from .local_settings import ESGF_SOLR_SHARDS, ESGF_SOLR_URL, WGET_SCRIPT_FILE_LIMIT
+from .local_settings import ESGF_SOLR_SHARDS, ESGF_SOLR_URL, WGET_SCRIPT_FILE_DEFAULT_LIMIT, WGET_SCRIPT_FILE_MAX_LIMIT
 
 def home(request):
     return HttpResponse('esgf-wget')
@@ -19,15 +19,19 @@ def home(request):
 def generate_wget_script(request):
 
     query_url = ESGF_SOLR_URL + '/select'
-    file_limit = WGET_SCRIPT_FILE_LIMIT
+    file_limit = WGET_SCRIPT_FILE_DEFAULT_LIMIT
 
     # Gather dataset_ids
     if request.method == 'POST':
+        if request.POST.get('limit'):
+            file_limit = min(int(request.POST['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
         if request.POST.get('dataset_id'):
             dataset_id_list = request.POST.getlist('dataset_id')
         else:
             return HttpResponse('No datasets selected.')
     elif request.method == 'GET':
+        if request.POST.get('limit'):
+            file_limit = min(int(request.GET['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
         if request.GET.get('dataset_id'):
             dataset_id_list = request.GET.getlist('dataset_id')
         else:
