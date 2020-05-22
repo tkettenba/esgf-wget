@@ -9,7 +9,10 @@ import urllib.parse
 import datetime
 import json
 
-from .local_settings import ESGF_SOLR_SHARDS, ESGF_SOLR_URL, WGET_SCRIPT_FILE_DEFAULT_LIMIT, WGET_SCRIPT_FILE_MAX_LIMIT
+from .local_settings import ESGF_SOLR_SHARDS, \
+                            ESGF_SOLR_URL, \
+                            WGET_SCRIPT_FILE_DEFAULT_LIMIT, \
+                            WGET_SCRIPT_FILE_MAX_LIMIT
 
 def home(request):
     return HttpResponse('esgf-wget')
@@ -93,16 +96,20 @@ def generate_wget_script(request):
             url_split = url.split('|')
             if url_split[2] == 'HTTPServer':
                 file_list.append(dict(filename=filename, 
-                                        url=url_split[0], 
-                                        checksum_type=checksum_type, 
-                                        checksum=checksum))
+                                      url=url_split[0], 
+                                      checksum_type=checksum_type, 
+                                      checksum=checksum))
                 break
 
     # Build wget script
     current_datetime = datetime.datetime.now()
     timestamp = current_datetime.strftime('%Y/%m/%d %H:%M:%S')
 
-    context = dict(timestamp=timestamp, files=file_list, warning_message=wget_warn)
+    context = dict(timestamp=timestamp, 
+                   datasets=dataset_id_list, 
+                   file_limit=file_limit,
+                   files=file_list, 
+                   warning_message=wget_warn)
     wget_script = render(request, 'wget-template.sh', context)
 
     script_filename = current_datetime.strftime('wget-%Y%m%d%H%M%S.sh')
