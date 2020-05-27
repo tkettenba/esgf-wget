@@ -14,5 +14,8 @@ ESGF_SOLR_URL = ''
 # Solr file shards
 ESGF_SOLR_SHARDS = []
 
+# Default limit on the number of files allowed in a wget script
+WGET_SCRIPT_FILE_DEFAULT_LIMIT = 1000
+
 # Maximum number of files allowed in a wget script
-WGET_SCRIPT_FILE_LIMIT = 1000
+WGET_SCRIPT_FILE_MAX_LIMIT = 100000
