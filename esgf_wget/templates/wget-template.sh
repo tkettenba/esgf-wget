@@ -115,7 +115,7 @@ debug=0
 clean_work=1
 
 #parse flags
-while getopts ':c:pfF:o:w:isuUndvqhHI:T' OPT; do
+while getopts 'F:w:iuUnSpdvqh' OPT; do
     case $OPT in
         F) input_file="$OPTARG";;       #<file> : read input from file instead of the embedded one (use - to read from stdin)
         w) output="$OPTARG";;           #<file> : Write embedded files into a file and exit
@@ -123,6 +123,7 @@ while getopts ':c:pfF:o:w:isuUndvqhHI:T' OPT; do
         u) update=1;;                   #       : Issue the search again and see if something has changed.
         U) update_files=1;;             #       : Update files from server overwriting local ones (detect with -u)
         n) dry_run=1;;                  #       : Don't download any files, just report.
+        S) skip_checksum=1;;            #       : Skip file checksum
         p) clean_work=0;;               #       : preserve data that failed checksum
         d) verbose=1;debug=1;;          #       : display debug information
         v) verbose=1;;                  #       : be more verbose
@@ -291,6 +292,10 @@ download() {
             #check if file is there
             if [[ -f $file ]]; then
                 ((debug)) && echo file found
+                if ((skip_checksum)); then
+                    echo "Skipping check of file checksum"
+                    break
+                fi
                 if [[ ! "$chksum" ]]; then
                     echo "Checksum not provided, can't verify file integrity"
                     break
@@ -335,9 +340,6 @@ download() {
         
         if ((failed)); then
             echo "download failed"
-            # most common failure is certificate expiration, so check this
-            #if we have the pasword we can retrigger download
-            ((!skip_security)) && [[ "$pass" ]] && check_cert
             unset failed
         fi
         
