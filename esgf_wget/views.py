@@ -21,11 +21,22 @@ def home(request):
 @csrf_exempt
 def generate_wget_script(request):
 
-    query_url = ESGF_SOLR_URL + '/select'
+    query_url = ESGF_SOLR_URL + '/files/select'
     file_limit = WGET_SCRIPT_FILE_DEFAULT_LIMIT
+    use_distrib = True
+    requested_shards = []
 
     # Gather dataset_ids
     if request.method == 'POST':
+        if request.POST.get('distrib'):
+            if request.POST['distrib'].lower() == 'false':
+                use_distrib = False
+            elif request.POST['distrib'].lower() == 'true':
+                use_distrib = True
+            else:
+                return HttpResponse('Parameter \"distrib\" must be set to true or false.')
+        if request.POST.get('shards'):
+            requested_shards = request.POST.getlist('shards')
         if request.POST.get('limit'):
             file_limit = min(int(request.POST['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
         if request.POST.get('dataset_id'):
@@ -33,7 +44,16 @@ def generate_wget_script(request):
         else:
             return HttpResponse('No datasets selected.')
     elif request.method == 'GET':
-        if request.POST.get('limit'):
+        if request.GET.get('distrib'):
+            if request.GET['distrib'].lower() == 'false':
+                use_distrib = False
+            elif request.GET['distrib'].lower() == 'true':
+                use_distrib = True
+            else:
+                return HttpResponse('Parameter \"distrib\" must be set to true or false.')
+        if request.GET.get('shards'):
+            requested_shards = request.GET.getlist('shards')
+        if request.GET.get('limit'):
             file_limit = min(int(request.GET['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
         if request.GET.get('dataset_id'):
             dataset_id_list = request.GET.getlist('dataset_id')
@@ -58,9 +78,14 @@ def generate_wget_script(request):
                         fq=file_query,
                         limit=file_limit)
 
-    if len(ESGF_SOLR_SHARDS) > 0:
-        shards = ','.join(ESGF_SOLR_SHARDS)
-        query_params.update(dict(shards=shards))
+    # Use shards for distributed search if 'distrib' is true, otherwise use only local search
+    if use_distrib:
+        if len(requested_shards) > 0:
+            shards = ','.join([s + '/files' for s in requested_shards])
+            query_params.update(dict(shards=shards))
+        elif len(ESGF_SOLR_SHARDS) > 0:
+            shards = ','.join([s + '/files' for s in ESGF_SOLR_SHARDS])
+            query_params.update(dict(shards=shards))
 
     # Fetch the number of files for the query
     count_query_params = dict(rows=1)
