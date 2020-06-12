@@ -21,7 +21,7 @@ def home(request):
 @csrf_exempt
 def generate_wget_script(request):
 
-    query_url = ESGF_SOLR_URL + '/select'
+    query_url = ESGF_SOLR_URL + '/files/select'
     file_limit = WGET_SCRIPT_FILE_DEFAULT_LIMIT
     use_distrib = True
 
@@ -76,7 +76,7 @@ def generate_wget_script(request):
     # Use shards for distributed search if 'distrib' is true, otherwise use only local search
     if use_distrib:
         if len(ESGF_SOLR_SHARDS) > 0:
-            shards = ','.join(ESGF_SOLR_SHARDS)
+            shards = ','.join([s + '/files' for s in ESGF_SOLR_SHARDS])
             query_params.update(dict(shards=shards))
 
     # Fetch the number of files for the query
