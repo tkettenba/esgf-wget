@@ -28,8 +28,12 @@ def generate_wget_script(request):
     # Gather dataset_ids
     if request.method == 'POST':
         if request.POST.get('distrib'):
-            if request.POST['distrib'] == 'false':
+            if request.POST['distrib'].lower() == 'false':
                 use_distrib = False
+            elif request.POST['distrib'].lower() == 'true':
+                use_distrib = True
+            else:
+                return HttpResponse('Parameter \"distrib\" must be set to true or false.')
         if request.POST.get('limit'):
             file_limit = min(int(request.POST['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
         if request.POST.get('dataset_id'):
@@ -38,8 +42,12 @@ def generate_wget_script(request):
             return HttpResponse('No datasets selected.')
     elif request.method == 'GET':
         if request.GET.get('distrib'):
-            if request.GET['distrib'] == 'false':
+            if request.GET['distrib'].lower() == 'false':
                 use_distrib = False
+            elif request.GET['distrib'].lower() == 'true':
+                use_distrib = True
+            else:
+                return HttpResponse('Parameter \"distrib\" must be set to true or false.')
         if request.GET.get('limit'):
             file_limit = min(int(request.GET['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
         if request.GET.get('dataset_id'):
