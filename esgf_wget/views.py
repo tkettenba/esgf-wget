@@ -36,7 +36,7 @@ def generate_wget_script(request):
             else:
                 return HttpResponse('Parameter \"distrib\" must be set to true or false.')
         if request.POST.get('shards'):
-            requested_shards = request.POST.getlist('shards')
+            requested_shards = request.POST['shards'].split(',')
         if request.POST.get('limit'):
             file_limit = min(int(request.POST['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
         if request.POST.get('dataset_id'):
@@ -52,7 +52,7 @@ def generate_wget_script(request):
             else:
                 return HttpResponse('Parameter \"distrib\" must be set to true or false.')
         if request.GET.get('shards'):
-            requested_shards = request.GET.getlist('shards')
+            requested_shards = request.GET['shards'].split(',')
         if request.GET.get('limit'):
             file_limit = min(int(request.GET['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
         if request.GET.get('dataset_id'):
@@ -130,10 +130,12 @@ def generate_wget_script(request):
     current_datetime = datetime.datetime.now()
     timestamp = current_datetime.strftime('%Y/%m/%d %H:%M:%S')
 
-    context = dict(timestamp=timestamp, 
-                   datasets=dataset_id_list, 
+    context = dict(timestamp=timestamp,
+                   datasets=dataset_id_list,
+                   distrib=use_distrib,
+                   shards=requested_shards,
                    file_limit=file_limit,
-                   files=file_list, 
+                   files=file_list,
                    warning_message=wget_warn)
     wget_script = render(request, 'wget-template.sh', context)
 
