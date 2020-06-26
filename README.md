@@ -64,7 +64,7 @@ The parameter `shards` is used to pass specific Solr shards for use by the datas
 localhost:8000/wget?shards=localhost:8993/solr,localhost:8994/solr,localhost:8995/solr&dataset_id=...
 ```
 
-The parameter `limit` helps control the file limit of the dataset search.  By default, the file limit will come from the varible `WGET_SCRIPT_FILE_DEFAULT_LIMIT` in local_settings.py.  The file limit is ultimately limited by the varible `WGET_SCRIPT_FILE_MAX_LIMIT` in local_settings.py.
+The parameter `limit` helps control the file limit of the dataset search.  By default, the file limit will come from the variable `WGET_SCRIPT_FILE_DEFAULT_LIMIT` in local_settings.py.  The file limit is ultimately limited by the variable `WGET_SCRIPT_FILE_MAX_LIMIT` in local_settings.py.
 ```
 localhost:8000/wget?limit=20000&dataset_id=...
 ```
