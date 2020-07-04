@@ -26,41 +26,29 @@ def generate_wget_script(request):
     use_distrib = True
     requested_shards = []
 
-    # Gather dataset_ids
+    # Gather dataset_ids and other parameters
     if request.method == 'POST':
-        if request.POST.get('distrib'):
-            if request.POST['distrib'].lower() == 'false':
-                use_distrib = False
-            elif request.POST['distrib'].lower() == 'true':
-                use_distrib = True
-            else:
-                return HttpResponse('Parameter \"distrib\" must be set to true or false.')
-        if request.POST.get('shards'):
-            requested_shards = request.POST['shards'].split(',')
-        if request.POST.get('limit'):
-            file_limit = min(int(request.POST['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
-        if request.POST.get('dataset_id'):
-            dataset_id_list = request.POST.getlist('dataset_id')
-        else:
-            return HttpResponse('No datasets selected.')
+        url_params = request.POST
     elif request.method == 'GET':
-        if request.GET.get('distrib'):
-            if request.GET['distrib'].lower() == 'false':
-                use_distrib = False
-            elif request.GET['distrib'].lower() == 'true':
-                use_distrib = True
-            else:
-                return HttpResponse('Parameter \"distrib\" must be set to true or false.')
-        if request.GET.get('shards'):
-            requested_shards = request.GET['shards'].split(',')
-        if request.GET.get('limit'):
-            file_limit = min(int(request.GET['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
-        if request.GET.get('dataset_id'):
-            dataset_id_list = request.GET.getlist('dataset_id')
-        else:
-            return HttpResponse('No datasets selected.')
+        url_params = request.GET
     else:
         return HttpResponse('Request method must be POST or GET.')
+
+    if url_params.get('distrib'):
+        if url_params['distrib'].lower() == 'false':
+            use_distrib = False
+        elif url_params['distrib'].lower() == 'true':
+            use_distrib = True
+        else:
+            return HttpResponse('Parameter \"distrib\" must be set to true or false.')
+    if url_params.get('shards'):
+        requested_shards = url_params['shards'].split(',')
+    if url_params.get('limit'):
+        file_limit = min(int(url_params['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
+    if url_params.get('dataset_id'):
+        dataset_id_list = url_params.getlist('dataset_id')
+    else:
+        return HttpResponse('No datasets selected.')
 
     # Build Solr query
     if len(dataset_id_list) == 1:
