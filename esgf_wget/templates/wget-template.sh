@@ -19,7 +19,7 @@ if [ $BASH ] && [ `basename $BASH` != bash ]; then
     exit $?
 fi
 
-version=0.2
+version=0.3
 CACHE_FILE=.$(basename $0).status
 search_url='{{request.build_absolute_uri}}'
 request_method='{{request.method}}'

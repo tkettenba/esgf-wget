@@ -2,7 +2,7 @@
 Service API endpoint for simplified wget scripts
 
 ## Running the API
-This API requires Python 3 and Django 2.2.  The required Dango version can be installed from requirements.txt via pip.
+This API requires Python 3 and Django 3.0.  The required Dango version can be installed from requirements.txt via pip.
 ```
 pip install -r requirements.txt
 ```
