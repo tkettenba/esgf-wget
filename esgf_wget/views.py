@@ -25,6 +25,7 @@ def generate_wget_script(request):
     file_limit = WGET_SCRIPT_FILE_DEFAULT_LIMIT
     use_distrib = True
     requested_shards = []
+    script_template_file = 'wget-template.sh'
 
     # Gather dataset_ids and other parameters
     if request.method == 'POST':
@@ -33,6 +34,15 @@ def generate_wget_script(request):
         url_params = request.GET
     else:
         return HttpResponse('Request method must be POST or GET.')
+
+    # Create a simplified script that only runs wget on a list of files
+    if url_params.get('simple'):
+        if url_params['simple'].lower() == 'false':
+            script_template_file = 'wget-template.sh'
+        elif url_params['simple'].lower() == 'true':
+            script_template_file = 'wget-simple-template.sh'
+        else:
+            return HttpResponse('Parameter \"simple\" must be set to true or false.')
 
     if url_params.get('distrib'):
         if url_params['distrib'].lower() == 'false':
@@ -125,7 +135,7 @@ def generate_wget_script(request):
                    file_limit=file_limit,
                    files=file_list,
                    warning_message=wget_warn)
-    wget_script = render(request, 'wget-template.sh', context)
+    wget_script = render(request, script_template_file, context)
 
     script_filename = current_datetime.strftime('wget-%Y%m%d%H%M%S.sh')
 
