@@ -23,8 +23,13 @@ def generate_wget_script(request):
 
     query_url = ESGF_SOLR_URL + '/files/select'
     file_limit = WGET_SCRIPT_FILE_DEFAULT_LIMIT
+    file_offset = 0
+    use_sort = False
     use_distrib = True
+    timestamp_from = None
+    timestamp_to = None
     requested_shards = []
+    querys = []
 
     # Gather dataset_ids and other parameters
     if request.method == 'POST':
@@ -34,6 +39,26 @@ def generate_wget_script(request):
     else:
         return HttpResponse('Request method must be POST or GET.')
 
+    # Set range for timestamps to query
+    if url_params.get('from') or url_params.get('to'):
+        if url_params.get('from'):
+            timestamp_from = url_params['from']
+            ts_from = timestamp_from
+        else:
+            ts_from = '*'
+        if url_params.get('to'):
+            timestamp_to = url_params['to']
+            ts_to = timestamp_to
+        else:
+            ts_to = '*'
+        timestamp_from_to = "_timestamp:[{} TO {}]".format(ts_from, ts_to)
+        querys.append(timestamp_from_to)
+
+    if len(querys) == 0:
+        querys.append('*:*')
+    query_string = ' AND '.join(querys)
+
+    # Enable distributed search
     if url_params.get('distrib'):
         if url_params['distrib'].lower() == 'false':
             use_distrib = False
@@ -41,30 +66,51 @@ def generate_wget_script(request):
             use_distrib = True
         else:
             return HttpResponse('Parameter \"distrib\" must be set to true or false.')
+
+    # Enable sorting of records
+    if url_params.get('sort'):
+        if url_params['sort'].lower() == 'false':
+            use_sort = False
+        elif url_params['sort'].lower() == 'true':
+            use_sort = True
+        else:
+            return HttpResponse('Parameter \"sort\" must be set to true or false.')
+
+    # Use Solr shards requested from GET/POST
     if url_params.get('shards'):
         requested_shards = url_params['shards'].split(',')
+
+    # Set file number limit within a set maximum number
     if url_params.get('limit'):
         file_limit = min(int(url_params['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
+
+    # Set the starting index for the returned records from the query
+    if url_params.get('offset'):
+        file_offset = int(url_params['offset'])
+
+    file_query = ['type:File']
+
+    # Get dataset ids
+    dataset_id_list = []
     if url_params.get('dataset_id'):
         dataset_id_list = url_params.getlist('dataset_id')
-    else:
-        return HttpResponse('No datasets selected.')
+        if len(dataset_id_list) == 1:
+            datasets_query = 'dataset_id:{}'.format(dataset_id_list[0])
+        else:
+            datasets_query = 'dataset_id:({})'.format(' || '.join(dataset_id_list))
+        file_query.append(datasets_query)
 
-    # Build Solr query
-    if len(dataset_id_list) == 1:
-        datasets_query = 'dataset_id:{}'.format(dataset_id_list[0])
-    else:
-        datasets_query = 'dataset_id:({})'.format(' || '.join(dataset_id_list))
-
-    file_query = ['type:File', datasets_query]
     file_attributes = ['title', 'url', 'checksum_type', 'checksum']
-    query_params = dict(q='*:*', 
+    query_params = dict(q=query_string, 
                         wt='json', 
                         facet='true', 
-                        sort='id asc', 
                         fl=file_attributes, 
                         fq=file_query,
+                        start=file_offset,
                         limit=file_limit)
+
+    if use_sort:
+        query_params.update(dict(sort='id asc'))
 
     # Use shards for distributed search if 'distrib' is true, otherwise use only local search
     if use_distrib:
@@ -87,7 +133,7 @@ def generate_wget_script(request):
     # Limit the number of files to the maximum
     wget_warn = None
     if num_files == 0:
-        return HttpResponse('No files found for datasets.')
+        return HttpResponse('No files were found that matched the query.')
     elif num_files > file_limit:
         wget_warn = 'Warning! The total number of files was {} ' \
                     'but this script will only process {}.'.format(num_files, file_limit)
@@ -121,8 +167,12 @@ def generate_wget_script(request):
     context = dict(timestamp=timestamp,
                    datasets=dataset_id_list,
                    distrib=use_distrib,
+                   sort=use_sort,
                    shards=requested_shards,
                    file_limit=file_limit,
+                   file_offset=file_offset,
+                   timestamp_from=timestamp_from,
+                   timestamp_to=timestamp_to,
                    files=file_list,
                    warning_message=wget_warn)
     wget_script = render(request, 'wget-template.sh', context)

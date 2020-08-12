@@ -24,11 +24,15 @@ CACHE_FILE=.$(basename $0).status
 search_url='{{request.build_absolute_uri}}'
 request_method='{{request.method}}'
 file_limit={{file_limit}}
+file_offset={{file_offset}}
 distrib='{{ distrib|yesno:"true,false" }}'
-datasets=(
+sort='{{ sort|yesno:"true,false" }}'
+{% if timestamp_from %}timestamp_from={{ timestamp_from }}
+{% endif %}{% if timestamp_to %}timestamp_to={{ timestamp_to }}
+{% endif %}{% if datasets|length > 0 %}datasets=(
     {% spaceless %}{% for dataset in datasets %}    '{{ dataset }}'
 {% endfor %}{% endspaceless %}
-)
+){% endif %}
 {% spaceless %}{% if shards|length > 0 %}
 shards=(
     {% spaceless %}{% for shard in shards %}    '{{ shard }}'
@@ -169,12 +173,17 @@ check_commands
 if ((update)); then
     echo "Checking the server for changes..."
     if [[ $request_method == "POST" ]]; then
-        dataset_post=$(IFS="&" ; echo "${datasets[*]/#/dataset_id=}")
         {% spaceless %}{% if shards|length > 0 %}
         shards_post=$(IFS="," ; echo "${shards[*]}")
-        post_data="limit="$file_limit"&distrib="$distrib"&shards="$shards_post"&"$dataset_post
+        post_data="offset="$file_offset"limit="$file_limit"&distrib="$distrib"&sort="$sort"&shards="$shards_post
         {% else %}
-        post_data="limit="$file_limit"&distrib="$distrib"&"$dataset_post
+        post_data="offset="$file_offset"limit="$file_limit"&distrib="$distrib"&sort="$sort
+        {% endif %}{% endspaceless %}
+        {% if timestamp_from %}post_data=post_data"&from="$timestamp_from
+        {% endif %}{% if timestamp_to %}post_data=post_data"&to="$timestamp_to
+        {% endif %}{% spaceless %}{% if datasets|length > 0 %}
+        dataset_post=$(IFS="&" ; echo "${datasets[*]/#/dataset_id=}")
+        post_data=post_data"&"$dataset_post
         {% endif %}{% endspaceless %}
         new_wget="$(wget --post-data "$post_data" "$search_url" -qO -)"
     else
