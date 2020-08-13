@@ -21,7 +21,7 @@ ALLOWED_HOSTS = ['localhost']
 # Address of ESGF Solr
 ESGF_SOLR_URL = 'localhost/solr'
 
-# Solr file shards
+# Path to XML file containing Solr shards
 ESGF_SOLR_SHARDS_XML = '/esg/config/esgf_shards_static.xml'
 
 # Default limit on the number of files allowed in a wget script
