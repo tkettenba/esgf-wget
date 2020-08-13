@@ -22,12 +22,7 @@ ALLOWED_HOSTS = ['localhost']
 ESGF_SOLR_URL = 'localhost/solr'
 
 # Solr file shards
-ESGF_SOLR_SHARDS = [
-                    'localhost:8983/solr',
-                    'localhost:8985/solr',
-                    'localhost:8987/solr',
-                    'localhost:8988/solr'
-                   ]
+ESGF_SOLR_SHARDS_XML = '/esg/config/esgf_shards_static.xml'
 
 # Default limit on the number of files allowed in a wget script
 WGET_SCRIPT_FILE_DEFAULT_LIMIT = 1000
@@ -59,7 +54,7 @@ The parameter `distrib` is used to enable/disable distributed search, where all 
 localhost:8000/wget?distrib=false&dataset_id=...
 ```
 
-The parameter `shards` is used to pass specific Solr shards for use by the dataset search.  Shards are provided as a string of URLs delimited by commas.  If no shards are provided, then the API will use the shards stored in `ESGF_SOLR_SHARDS` in local_settings.py.
+The parameter `shards` is used to pass specific Solr shards for use by the dataset search.  Shards are provided as a string of URLs delimited by commas.  If no shards are provided, then the API will use the shards stored in the file `ESGF_SOLR_SHARDS_XML` in local_settings.py.
 ```
 localhost:8000/wget?shards=localhost:8993/solr,localhost:8994/solr,localhost:8995/solr&dataset_id=...
 ```
