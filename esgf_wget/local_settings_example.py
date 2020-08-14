@@ -11,8 +11,8 @@ ALLOWED_HOSTS = []
 # Address of ESGF Solr
 ESGF_SOLR_URL = ''
 
-# Solr file shards
-ESGF_SOLR_SHARDS = []
+# Path to XML file containing Solr shards
+ESGF_SOLR_SHARDS_XML = ''
 
 # Default limit on the number of files allowed in a wget script
 WGET_SCRIPT_FILE_DEFAULT_LIMIT = 1000
