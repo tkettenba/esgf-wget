@@ -119,7 +119,8 @@ def generate_wget_script(request):
                         fl=file_attributes, 
                         fq=file_query,
                         start=file_offset,
-                        limit=file_limit)
+                        limit=file_limit,
+                        rows=file_limit)
 
     if use_sort:
         query_params.update(dict(sort='id asc'))
@@ -133,32 +134,13 @@ def generate_wget_script(request):
             shards = ','.join([s + '/files' for s in xml_shards])
             query_params.update(dict(shards=shards))
 
-    # Fetch the number of files for the query
-    count_query_params = dict(rows=1)
-    count_query_params.update(query_params)
-    count_query_encoded = urllib.parse.urlencode(count_query_params, doseq=True).encode()
-    req = urllib.request.Request(query_url, count_query_encoded)
+    # Fetch files for the query
+    file_list = []
+    query_encoded = urllib.parse.urlencode(query_params, doseq=True).encode()
+    req = urllib.request.Request(query_url, query_encoded)
     with urllib.request.urlopen(req) as response:
         results = json.loads(response.read().decode())
     num_files = results['response']['numFound']
-
-    # Limit the number of files to the maximum
-    wget_warn = None
-    if num_files == 0:
-        return HttpResponse('No files were found that matched the query.')
-    elif num_files > file_limit:
-        wget_warn = 'Warning! The total number of files was {} ' \
-                    'but this script will only process {}.'.format(num_files, file_limit)
-        num_files = file_limit
-
-    # Fetch files for the query
-    file_list = []
-    file_query_params = dict(rows=num_files)
-    file_query_params.update(query_params)
-    file_query_encoded = urllib.parse.urlencode(file_query_params, doseq=True).encode()
-    req = urllib.request.Request(query_url, file_query_encoded)
-    with urllib.request.urlopen(req) as response:
-        results = json.loads(response.read().decode())
     for file_info in results['response']['docs']:
         filename = file_info['title']
         checksum_type = file_info['checksum_type'][0]
@@ -171,6 +153,14 @@ def generate_wget_script(request):
                                       checksum_type=checksum_type, 
                                       checksum=checksum))
                 break
+
+    # Limit the number of files to the maximum
+    wget_warn = None
+    if num_files == 0:
+        return HttpResponse('No files found for datasets.')
+    elif num_files > file_limit:
+        wget_warn = 'Warning! The total number of files was {} ' \
+                    'but this script will only process {}.'.format(num_files, file_limit)
 
     # Build wget script
     current_datetime = datetime.datetime.now()
