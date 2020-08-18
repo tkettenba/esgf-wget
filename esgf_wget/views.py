@@ -4,15 +4,26 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
+import xml.etree.ElementTree as ET
 import urllib.request
 import urllib.parse
 import datetime
 import json
+import os
 
-from .local_settings import ESGF_SOLR_SHARDS, \
+from .local_settings import ESGF_SOLR_SHARDS_XML, \
                             ESGF_SOLR_URL, \
                             WGET_SCRIPT_FILE_DEFAULT_LIMIT, \
                             WGET_SCRIPT_FILE_MAX_LIMIT
+
+def get_solr_shards_from_xml():
+    shard_list = []
+    if os.path.isfile(ESGF_SOLR_SHARDS_XML):
+        tree = ET.parse(ESGF_SOLR_SHARDS_XML)
+        root = tree.getroot()
+        for value in root:
+            shard_list.append(value.text)
+    return shard_list
 
 def home(request):
     return HttpResponse('esgf-wget')
@@ -29,6 +40,7 @@ def generate_wget_script(request):
     timestamp_from = None
     timestamp_to = None
     requested_shards = []
+    xml_shards = get_solr_shards_from_xml()
     querys = []
 
     # Gather dataset_ids and other parameters
@@ -117,8 +129,8 @@ def generate_wget_script(request):
         if len(requested_shards) > 0:
             shards = ','.join([s + '/files' for s in requested_shards])
             query_params.update(dict(shards=shards))
-        elif len(ESGF_SOLR_SHARDS) > 0:
-            shards = ','.join([s + '/files' for s in ESGF_SOLR_SHARDS])
+        elif len(xml_shards) > 0:
+            shards = ','.join([s + '/files' for s in xml_shards])
             query_params.update(dict(shards=shards))
 
     # Fetch the number of files for the query
