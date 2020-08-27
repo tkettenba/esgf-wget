@@ -40,6 +40,7 @@ def generate_wget_script(request):
     timestamp_from = None
     timestamp_to = None
     requested_shards = []
+    script_template_file = 'wget-template.sh'
     xml_shards = get_solr_shards_from_xml()
     querys = []
 
@@ -69,6 +70,15 @@ def generate_wget_script(request):
     if len(querys) == 0:
         querys.append('*:*')
     query_string = ' AND '.join(querys)
+
+    # Create a simplified script that only runs wget on a list of files
+    if url_params.get('simple'):
+        if url_params['simple'].lower() == 'false':
+            script_template_file = 'wget-template.sh'
+        elif url_params['simple'].lower() == 'true':
+            script_template_file = 'wget-simple-template.sh'
+        else:
+            return HttpResponse('Parameter \"simple\" must be set to true or false.')
 
     # Enable distributed search
     if url_params.get('distrib'):
@@ -177,7 +187,7 @@ def generate_wget_script(request):
                    timestamp_to=timestamp_to,
                    files=file_list,
                    warning_message=wget_warn)
-    wget_script = render(request, 'wget-template.sh', context)
+    wget_script = render(request, script_template_file, context)
 
     script_filename = current_datetime.strftime('wget-%Y%m%d%H%M%S.sh')
 
