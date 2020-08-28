@@ -132,7 +132,10 @@ def generate_wget_script(request):
                         limit=file_limit,
                         rows=file_limit)
 
+    # Sort by timestamp descending if enabled, otherwise sort by id ascending
     if use_sort:
+        query_params.update(dict(sort='_timestamp desc'))
+    else:
         query_params.update(dict(sort='id asc'))
 
     # Use shards for distributed search if 'distrib' is true, otherwise use only local search
