@@ -42,7 +42,9 @@ def generate_wget_script(request):
     requested_shards = []
     script_template_file = 'wget-template.sh'
     xml_shards = get_solr_shards_from_xml()
+
     querys = []
+    file_query = ['type:File']
 
     # Gather dataset_ids and other parameters
     if request.method == 'POST':
@@ -110,7 +112,15 @@ def generate_wget_script(request):
     if url_params.get('offset'):
         file_offset = int(url_params['offset'])
 
-    file_query = ['type:File']
+    # Set boolean constraints
+    boolean_constraints = ['latest', 'retracted', 'replica']
+    for bc in boolean_constraints:
+        if url_params.get(bc):
+            bc_value = url_params[bc].lower()
+            if bc_value == 'false' or bc_value == 'true':
+                file_query.append('%s:%s'%(bc, bc_value))
+            else:
+                return HttpResponse('Parameter \"%s\" must be set to true or false.'%bc)
 
     # Get dataset ids
     dataset_id_list = []
