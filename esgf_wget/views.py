@@ -69,6 +69,25 @@ def generate_wget_script(request):
         timestamp_from_to = "_timestamp:[{} TO {}]".format(ts_from, ts_to)
         querys.append(timestamp_from_to)
 
+    # Set datetime start and stop
+    if url_params.get('datetime_start'):
+        datetime_start = url_params['datetime_start']
+        querys.append("datetime_start:[{} TO *]".format(datetime_start))
+
+    if url_params.get('datetime_stop'):
+        datetime_stop = url_params['datetime_stop']
+        querys.append("datetime_stop:[* TO {}]".format(datetime_stop))
+
+    # Set version min and max
+    if url_params.get('min_version') or url_params.get('max_version'):
+        if url_params.get('min_version'):
+            min_version = url_params['min_version']
+            querys.append("version:[{} TO *]".format(min_version))
+
+        if url_params.get('max_version'):
+            max_version = url_params['max_version']
+            querys.append("version:[* TO {}]".format(max_version))
+
     if len(querys) == 0:
         querys.append('*:*')
     query_string = ' AND '.join(querys)
