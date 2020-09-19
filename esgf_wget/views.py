@@ -54,6 +54,12 @@ def generate_wget_script(request):
     else:
         return HttpResponse('Request method must be POST or GET.')
 
+    # Create list of parameters to be saved in the script
+    url_params_list = []
+    for param, value_list in url_params.lists():
+        for v in value_list:
+            url_params_list.append('{}={}'.format(param, v))
+
     # Set range for timestamps to query
     if url_params.get('from') or url_params.get('to'):
         if url_params.get('from'):
@@ -209,14 +215,7 @@ def generate_wget_script(request):
     timestamp = current_datetime.strftime('%Y/%m/%d %H:%M:%S')
 
     context = dict(timestamp=timestamp,
-                   datasets=dataset_id_list,
-                   distrib=use_distrib,
-                   sort=use_sort,
-                   shards=requested_shards,
-                   file_limit=file_limit,
-                   file_offset=file_offset,
-                   timestamp_from=timestamp_from,
-                   timestamp_to=timestamp_to,
+                   url_params=url_params_list,
                    files=file_list,
                    warning_message=wget_warn)
     wget_script = render(request, script_template_file, context)
