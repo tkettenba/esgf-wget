@@ -85,14 +85,21 @@ def generate_wget_script(request):
         querys.append("datetime_stop:[* TO {}]".format(datetime_stop))
 
     # Set version min and max
-    if url_params.get('min_version') or url_params.get('max_version'):
-        if url_params.get('min_version'):
-            min_version = url_params['min_version']
-            querys.append("version:[{} TO *]".format(min_version))
+    if url_params.get('min_version'):
+        min_version = url_params['min_version']
+        querys.append("version:[{} TO *]".format(min_version))
 
-        if url_params.get('max_version'):
-            max_version = url_params['max_version']
-            querys.append("version:[* TO {}]".format(max_version))
+    if url_params.get('max_version'):
+        max_version = url_params['max_version']
+        querys.append("version:[* TO {}]".format(max_version))
+
+    # Set bounding box constraint
+    if url_params.get('bbox'):
+        (west, south, east, north) = url_params['bbox']
+        querys.append('east_degrees:[{} TO *]'.format(west))
+        querys.append('north_degrees:[{} TO *]'.format(south))
+        querys.append('west_degrees:[* TO {}]'.format(east))
+        querys.append('south_degrees:[* TO {}]'.format(north))
 
     if len(querys) == 0:
         querys.append('*:*')
