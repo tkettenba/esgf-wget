@@ -387,6 +387,8 @@ cat <<'EOF-MESSAGE'
 EOF-MESSAGE
 sleep 1
 
+check_os
+
 download
 
 dedup_cache_
