@@ -27,8 +27,16 @@ def search_data_files(index_node, data_node, dataset_id, temp_dir):
 
         docs = json_data['response']['docs']
         for d in docs:
-            match_obj = re.match("(\S+)\|(\S+)", d['id'])
-            data_files.append(match_obj.group(1))
+            print("XXX id: {id}".format(id=d['id']))
+            match_obj = re.match(r'(\S+)\|(\S+)', d['id'])
+            # data_files.append(match_obj.group(1))
+            full_nc_filename = match_obj.group(1)
+            print("XXX full_nc_filename: {f}".format(f=full_nc_filename))
+            # match_obj = re.match(r'\S+.(\S+)\.nc$', full_nc_filename)
+            match_obj = re.match("\S+\.(\S+\.nc)$", full_nc_filename)
+            nc_filename = match_obj.group(1)
+            print("XXX nc_filename: {f}".format(f=nc_filename))
+            data_files.append(nc_filename)
 
     for d in data_files:
         print("filename: {d}".format(d=d))
