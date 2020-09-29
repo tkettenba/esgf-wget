@@ -48,9 +48,9 @@ def generate_wget_script(request):
 
     # Gather dataset_ids and other parameters
     if request.method == 'POST':
-        url_params = request.POST
+        url_params = request.POST.copy()
     elif request.method == 'GET':
-        url_params = request.GET
+        url_params = request.GET.copy()
     else:
         return HttpResponse('Request method must be POST or GET.')
 
@@ -63,12 +63,12 @@ def generate_wget_script(request):
     # Set range for timestamps to query
     if url_params.get('from') or url_params.get('to'):
         if url_params.get('from'):
-            timestamp_from = url_params['from']
+            timestamp_from = url_params.pop('from')[0]
             ts_from = timestamp_from
         else:
             ts_from = '*'
         if url_params.get('to'):
-            timestamp_to = url_params['to']
+            timestamp_to = url_params.pop('to')[0]
             ts_to = timestamp_to
         else:
             ts_to = '*'
@@ -77,25 +77,25 @@ def generate_wget_script(request):
 
     # Set datetime start and stop
     if url_params.get('datetime_start'):
-        datetime_start = url_params['datetime_start']
+        datetime_start = url_params.pop('datetime_start')[0]
         querys.append("datetime_start:[{} TO *]".format(datetime_start))
 
     if url_params.get('datetime_stop'):
-        datetime_stop = url_params['datetime_stop']
+        datetime_stop = url_params.pop('datetime_stop')[0]
         querys.append("datetime_stop:[* TO {}]".format(datetime_stop))
 
     # Set version min and max
     if url_params.get('min_version'):
-        min_version = url_params['min_version']
+        min_version = url_params.pop('min_version')[0]
         querys.append("version:[{} TO *]".format(min_version))
 
     if url_params.get('max_version'):
-        max_version = url_params['max_version']
+        max_version = url_params.pop('max_version')[0]
         querys.append("version:[* TO {}]".format(max_version))
 
     # Set bounding box constraint
     if url_params.get('bbox'):
-        (west, south, east, north) = url_params['bbox']
+        (west, south, east, north) = url_params.pop('bbox')[0]
         querys.append('east_degrees:[{} TO *]'.format(west))
         querys.append('north_degrees:[{} TO *]'.format(south))
         querys.append('west_degrees:[* TO {}]'.format(east))
@@ -107,62 +107,66 @@ def generate_wget_script(request):
 
     # Create a simplified script that only runs wget on a list of files
     if url_params.get('simple'):
-        if url_params['simple'].lower() == 'false':
+        use_simple_param = url_params.pop('simple')[0].lower()
+        if use_simple_param == 'false':
             script_template_file = 'wget-template.sh'
-        elif url_params['simple'].lower() == 'true':
+        elif use_simple_param == 'true':
             script_template_file = 'wget-simple-template.sh'
         else:
             return HttpResponse('Parameter \"simple\" must be set to true or false.')
 
     # Enable distributed search
     if url_params.get('distrib'):
-        if url_params['distrib'].lower() == 'false':
+        use_distrib_param = url_params.pop('distrib')[0].lower()
+        if use_distrib_param == 'false':
             use_distrib = False
-        elif url_params['distrib'].lower() == 'true':
+        elif use_distrib_param == 'true':
             use_distrib = True
         else:
             return HttpResponse('Parameter \"distrib\" must be set to true or false.')
 
     # Enable sorting of records
     if url_params.get('sort'):
-        if url_params['sort'].lower() == 'false':
+        use_sort_param = url_params.pop('sort')[0].lower()
+        if use_sort_param == 'false':
             use_sort = False
-        elif url_params['sort'].lower() == 'true':
+        elif use_sort_param == 'true':
             use_sort = True
         else:
             return HttpResponse('Parameter \"sort\" must be set to true or false.')
 
     # Use Solr shards requested from GET/POST
     if url_params.get('shards'):
-        requested_shards = url_params['shards'].split(',')
+        requested_shards = url_params.pop('shards')[0].split(',')
 
     # Set file number limit within a set maximum number
     if url_params.get('limit'):
-        file_limit = min(int(url_params['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
+        file_limit = min(int(url_params.pop('limit')[0]), WGET_SCRIPT_FILE_MAX_LIMIT)
 
     # Set the starting index for the returned records from the query
     if url_params.get('offset'):
-        file_offset = int(url_params['offset'])
+        file_offset = int(url_params.pop('offset')[0])
 
     # Set boolean constraints
     boolean_constraints = ['latest', 'retracted', 'replica']
     for bc in boolean_constraints:
         if url_params.get(bc):
-            bc_value = url_params[bc].lower()
+            bc_value = url_params.pop(bc)[0].lower()
             if bc_value == 'false' or bc_value == 'true':
                 file_query.append('%s:%s'%(bc, bc_value))
             else:
                 return HttpResponse('Parameter \"%s\" must be set to true or false.'%bc)
-
-    # Get dataset ids
-    dataset_id_list = []
-    if url_params.get('dataset_id'):
-        dataset_id_list = url_params.getlist('dataset_id')
-        if len(dataset_id_list) == 1:
-            datasets_query = 'dataset_id:{}'.format(dataset_id_list[0])
+    
+    # Collect remaining constraints
+    for param, value_list in url_params.lists():
+        # Check for negative constraints
+        if param[-1] == '!':
+            param = '-' + param[:-1]
+        if len(value_list) == 1:
+            fq = '{}:{}'.format(param, value_list[0])
         else:
-            datasets_query = 'dataset_id:({})'.format(' || '.join(dataset_id_list))
-        file_query.append(datasets_query)
+            fq = '{}:({})'.format(param, ' || '.join(value_list))
+        file_query.append(fq)
 
     file_attributes = ['title', 'url', 'checksum_type', 'checksum']
     query_params = dict(q=query_string, 
