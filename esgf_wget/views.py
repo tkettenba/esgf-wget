@@ -11,6 +11,9 @@ import datetime
 import json
 import os
 
+from .query_utils import split_value, \
+                         KEYWORDS, \
+                         CORE_QUERY_FIELDS
 from .local_settings import ESGF_SOLR_SHARDS_XML, \
                             ESGF_SOLR_URL, \
                             WGET_SCRIPT_FILE_DEFAULT_LIMIT, \
@@ -162,10 +165,18 @@ def generate_wget_script(request):
         # Check for negative constraints
         if param[-1] == '!':
             param = '-' + param[:-1]
-        if len(value_list) == 1:
-            fq = '{}:{}'.format(param, value_list[0])
+
+        # Split values separated by commas but don't split at commas inside parentheses
+        # (i.e. cases such as "CESM1(CAM5.1,FV2)")
+        split_value_list = []
+        for v in value_list:
+            for sv in split_value(v):
+                split_value_list.append(sv)
+
+        if len(split_value_list) == 1:
+            fq = '{}:{}'.format(param, split_value_list[0])
         else:
-            fq = '{}:({})'.format(param, ' || '.join(value_list))
+            fq = '{}:({})'.format(param, ' || '.join(split_value_list))
         file_query.append(fq)
 
     file_attributes = ['title', 'url', 'checksum_type', 'checksum']
