@@ -1,17 +1,26 @@
+
+from io import StringIO
+import xml.etree.ElementTree as ET
+import urllib.request
+import urllib.parse
+import csv
+import os
+
+from .local_settings import ESGF_SOLR_SHARDS_XML, \
+                            ESGF_SOLR_URL
+
 # reserved query keywords
 OFFSET = "offset"  
 LIMIT = "limit"  
 QUERY = "query"
-FORMAT = "format"  
-FACETS = "facets"  
-FIELDS = "fields"  
 DISTRIB = "distrib"  
 SHARDS = "shards"  
 FROM = "from"  
 TO = "to"  
 SORT = "sort"  
+SIMPLE = "simple"
     
-KEYWORDS = [ OFFSET, LIMIT, QUERY, FORMAT, FACETS, FIELDS, DISTRIB, SHARDS, FROM, TO, SORT ]
+KEYWORDS = [ OFFSET, LIMIT, QUERY, DISTRIB, SHARDS, FROM, TO, SORT, SIMPLE ]
             
 # standard metadata fields, always included for each result (if available)
 FIELD_ID = "id"
@@ -79,7 +88,7 @@ FIELD_WGET_EMPTYPATH = "download_emptypath"
 # fields that are always allowed in queries, in addition to configured facets
 CORE_QUERY_FIELDS = [ 
         FIELD_ID, FIELD_TYPE, FIELD_REPLICA, FIELD_RETRACTED, FIELD_LATEST, FIELD_MASTER_ID, FIELD_INSTANCE_ID, FIELD_DRS_ID,
-        FIELD_TITLE, FIELD_DESCRIPTION, FIELD_TIMESTAMP, FIELD_URL, FIELD_XLINK, FIELD_SIZE, 
+        FIELD_TITLE, FIELD_DESCRIPTION, FIELD_TIMESTAMP, FIELD_TIMESTAMP_, FIELD_URL, FIELD_XLINK, FIELD_SIZE, 
         FIELD_NUMBER_OF_FILES, FIELD_NUMBER_OF_AGGREGATIONS, FIELD_DATASET_ID, FIELD_TRACKING_ID, FIELD_ACCESS,
         FIELD_VERSION, FIELD_MAX_VERSION, FIELD_MIN_VERSION,
         FIELD_CHECKSUM, FIELD_CHECKSUM_TYPE, FIELD_DATA_NODE, FIELD_INDEX_NODE,
@@ -99,7 +108,7 @@ NOT_FACETS = [
     FIELD_LATEST, FIELD_REPLICA, FIELD_RETRACTED,
     FIELD_NUMBER_OF_FILES, FIELD_NUMBER_OF_AGGREGATIONS,
     FIELD_TRACKING_ID,
-    FIELD_TIMESTAMP, FIELD_TITLE, FIELD_DESCRIPTION, FIELD_TIMESTAMP, FIELD_URL, FIELD_XLINK, FIELD_SIZE, 
+    FIELD_TIMESTAMP, FIELD_TITLE, FIELD_DESCRIPTION, FIELD_URL, FIELD_XLINK, FIELD_SIZE, 
     FIELD_TEXT,
     FIELD_TYPE,
     FIELD_VARIABLE_UNITS,
@@ -115,7 +124,7 @@ def split_value(value):
     """
     
     # first split by comma
-    values = value.split(',')
+    values = [v.strip() for v in value.split(',')]
     values_length = len(values)
 
     if len(values) == 1:  # no splitting occurred
@@ -146,3 +155,38 @@ def split_value(value):
         # convert listo into array
         return _values
         
+def get_solr_shards_from_xml():
+    """
+    Get Solr shards from the XML file specified in the local settings 
+    as ESGF_SOLR_SHARDS_XML
+    """
+
+    shard_list = []
+    if os.path.isfile(ESGF_SOLR_SHARDS_XML):
+        tree = ET.parse(ESGF_SOLR_SHARDS_XML)
+        root = tree.getroot()
+        for value in root:
+            shard_list.append(value.text)
+    return shard_list
+
+def get_facets_from_solr():
+    """
+    Get valid facets currently used by the dataset Solr.
+    """
+
+    query_url = ESGF_SOLR_URL + '/datasets/select'
+    query_params = dict(q='*:*', 
+                        wt='csv',
+                        rows=0)
+
+    query_encoded = urllib.parse.urlencode(query_params, doseq=True).encode()
+    req = urllib.request.Request(query_url, query_encoded)
+    with urllib.request.urlopen(req) as response:
+        results = StringIO(response.read().decode())
+        reader = csv.reader(results, delimiter=',')
+        facets = next(reader)
+
+    # Remove fields that should NOT be used as facets
+    _facets = [f for f in facets if f not in NOT_FACETS]
+    
+    return facets

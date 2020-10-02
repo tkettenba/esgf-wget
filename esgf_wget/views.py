@@ -4,29 +4,16 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-import xml.etree.ElementTree as ET
 import urllib.request
 import urllib.parse
 import datetime
 import json
-import os
 
-from .query_utils import split_value, \
-                         KEYWORDS, \
-                         CORE_QUERY_FIELDS
-from .local_settings import ESGF_SOLR_SHARDS_XML, \
-                            ESGF_SOLR_URL, \
+from .query_utils import *
+
+from .local_settings import ESGF_SOLR_URL, \
                             WGET_SCRIPT_FILE_DEFAULT_LIMIT, \
                             WGET_SCRIPT_FILE_MAX_LIMIT
-
-def get_solr_shards_from_xml():
-    shard_list = []
-    if os.path.isfile(ESGF_SOLR_SHARDS_XML):
-        tree = ET.parse(ESGF_SOLR_SHARDS_XML)
-        root = tree.getroot()
-        for value in root:
-            shard_list.append(value.text)
-    return shard_list
 
 def home(request):
     return HttpResponse('esgf-wget')
@@ -40,11 +27,10 @@ def generate_wget_script(request):
     file_offset = 0
     use_sort = False
     use_distrib = True
-    timestamp_from = None
-    timestamp_to = None
     requested_shards = []
     script_template_file = 'wget-template.sh'
     xml_shards = get_solr_shards_from_xml()
+    solr_facets = get_facets_from_solr()
 
     querys = []
     file_query = ['type:File']
@@ -57,6 +43,15 @@ def generate_wget_script(request):
     else:
         return HttpResponse('Request method must be POST or GET.')
 
+    # Catch invalid parameters
+    for param in url_params.keys():
+        if param[-1] == '!':
+            param = param[:-1]
+        if param not in KEYWORDS \
+            and param not in CORE_QUERY_FIELDS \
+            and param not in solr_facets:
+            return HttpResponse('Invalid HTTP query parameter=%s'%param)
+
     # Create list of parameters to be saved in the script
     url_params_list = []
     for param, value_list in url_params.lists():
@@ -64,94 +59,94 @@ def generate_wget_script(request):
             url_params_list.append('{}={}'.format(param, v))
 
     # Set range for timestamps to query
-    if url_params.get('from') or url_params.get('to'):
-        if url_params.get('from'):
-            timestamp_from = url_params.pop('from')[0]
+    if url_params.get(FROM) or url_params.get(TO):
+        if url_params.get(FROM):
+            timestamp_from = url_params.pop(FROM)[0]
             ts_from = timestamp_from
         else:
             ts_from = '*'
-        if url_params.get('to'):
-            timestamp_to = url_params.pop('to')[0]
+        if url_params.get(TO):
+            timestamp_to = url_params.pop(TO)[0]
             ts_to = timestamp_to
         else:
             ts_to = '*'
-        timestamp_from_to = "_timestamp:[{} TO {}]".format(ts_from, ts_to)
+        timestamp_from_to = "{}:[{} TO {}]".format(FIELD_TIMESTAMP_, ts_from, ts_to)
         querys.append(timestamp_from_to)
 
     # Set datetime start and stop
-    if url_params.get('datetime_start'):
-        datetime_start = url_params.pop('datetime_start')[0]
-        querys.append("datetime_start:[{} TO *]".format(datetime_start))
+    if url_params.get(FIELD_DATETIME_START):
+        datetime_start = url_params.pop(FIELD_DATETIME_START)[0]
+        querys.append("{}:[{} TO *]".format(FIELD_DATETIME_START, datetime_start))
 
-    if url_params.get('datetime_stop'):
-        datetime_stop = url_params.pop('datetime_stop')[0]
-        querys.append("datetime_stop:[* TO {}]".format(datetime_stop))
+    if url_params.get(FIELD_DATETIME_STOP):
+        datetime_stop = url_params.pop(FIELD_DATETIME_STOP)[0]
+        querys.append("{}:[* TO {}]".format(FIELD_DATETIME_STOP, datetime_stop))
 
     # Set version min and max
-    if url_params.get('min_version'):
-        min_version = url_params.pop('min_version')[0]
-        querys.append("version:[{} TO *]".format(min_version))
+    if url_params.get(FIELD_MIN_VERSION):
+        min_version = url_params.pop(FIELD_MIN_VERSION)[0]
+        querys.append("{}:[{} TO *]".format(FIELD_VERSION, min_version))
 
-    if url_params.get('max_version'):
-        max_version = url_params.pop('max_version')[0]
-        querys.append("version:[* TO {}]".format(max_version))
+    if url_params.get(FIELD_MAX_VERSION):
+        max_version = url_params.pop(FIELD_MAX_VERSION)[0]
+        querys.append("{}:[* TO {}]".format(FIELD_VERSION, max_version))
 
     # Set bounding box constraint
-    if url_params.get('bbox'):
-        (west, south, east, north) = url_params.pop('bbox')[0]
-        querys.append('east_degrees:[{} TO *]'.format(west))
-        querys.append('north_degrees:[{} TO *]'.format(south))
-        querys.append('west_degrees:[* TO {}]'.format(east))
-        querys.append('south_degrees:[* TO {}]'.format(north))
+    if url_params.get(FIELD_BBOX):
+        (west, south, east, north) = url_params.pop(FIELD_BBOX)[0]
+        querys.append('{}:[{} TO *]'.format(FIELD_EAST_DEGREES, west))
+        querys.append('{}:[{} TO *]'.format(FIELD_NORTH_DEGREES, south))
+        querys.append('{}:[* TO {}]'.format(FIELD_WEST_DEGREES, east))
+        querys.append('{}:[* TO {}]'.format(FIELD_SOUTH_DEGREES, north))
 
     if len(querys) == 0:
         querys.append('*:*')
     query_string = ' AND '.join(querys)
 
     # Create a simplified script that only runs wget on a list of files
-    if url_params.get('simple'):
-        use_simple_param = url_params.pop('simple')[0].lower()
+    if url_params.get(SIMPLE):
+        use_simple_param = url_params.pop(SIMPLE)[0].lower()
         if use_simple_param == 'false':
             script_template_file = 'wget-template.sh'
         elif use_simple_param == 'true':
             script_template_file = 'wget-simple-template.sh'
         else:
-            return HttpResponse('Parameter \"simple\" must be set to true or false.')
+            return HttpResponse('Parameter \"%s\" must be set to true or false.'%SIMPLE)
 
     # Enable distributed search
-    if url_params.get('distrib'):
-        use_distrib_param = url_params.pop('distrib')[0].lower()
+    if url_params.get(DISTRIB):
+        use_distrib_param = url_params.pop(DISTRIB)[0].lower()
         if use_distrib_param == 'false':
             use_distrib = False
         elif use_distrib_param == 'true':
             use_distrib = True
         else:
-            return HttpResponse('Parameter \"distrib\" must be set to true or false.')
+            return HttpResponse('Parameter \"%s\" must be set to true or false.'%DISTRIB)
 
     # Enable sorting of records
-    if url_params.get('sort'):
-        use_sort_param = url_params.pop('sort')[0].lower()
+    if url_params.get(SORT):
+        use_sort_param = url_params.pop(SORT)[0].lower()
         if use_sort_param == 'false':
             use_sort = False
         elif use_sort_param == 'true':
             use_sort = True
         else:
-            return HttpResponse('Parameter \"sort\" must be set to true or false.')
+            return HttpResponse('Parameter \"%s\" must be set to true or false.'%SORT)
 
     # Use Solr shards requested from GET/POST
-    if url_params.get('shards'):
-        requested_shards = url_params.pop('shards')[0].split(',')
+    if url_params.get(SHARDS):
+        requested_shards = url_params.pop(SHARDS)[0].split(',')
 
     # Set file number limit within a set maximum number
-    if url_params.get('limit'):
-        file_limit = min(int(url_params.pop('limit')[0]), WGET_SCRIPT_FILE_MAX_LIMIT)
+    if url_params.get(LIMIT):
+        file_limit = min(int(url_params.pop(LIMIT)[0]), WGET_SCRIPT_FILE_MAX_LIMIT)
 
     # Set the starting index for the returned records from the query
-    if url_params.get('offset'):
-        file_offset = int(url_params.pop('offset')[0])
+    if url_params.get(OFFSET):
+        file_offset = int(url_params.pop(OFFSET)[0])
 
     # Set boolean constraints
-    boolean_constraints = ['latest', 'retracted', 'replica']
+    boolean_constraints = [FIELD_LATEST, FIELD_RETRACTED, FIELD_REPLICA]
     for bc in boolean_constraints:
         if url_params.get(bc):
             bc_value = url_params.pop(bc)[0].lower()
