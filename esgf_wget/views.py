@@ -81,15 +81,13 @@ def generate_wget_script(request):
         querys.append(timestamp_from_to)
 
     # Set datetime start and stop
-    if url_params.get(FIELD_DATETIME_START):
-        datetime_start = url_params.pop(FIELD_DATETIME_START)[0]
-        querys.append("{}:[{} TO *]".format(FIELD_DATETIME_START,
-                                            datetime_start))
+    if url_params.get(FIELD_START):
+        _start = url_params.pop(FIELD_START)[0]
+        querys.append("{}:[{} TO *]".format(FIELD_DATETIME_STOP, _start))
 
-    if url_params.get(FIELD_DATETIME_STOP):
-        datetime_stop = url_params.pop(FIELD_DATETIME_STOP)[0]
-        querys.append("{}:[* TO {}]".format(FIELD_DATETIME_STOP,
-                                            datetime_stop))
+    if url_params.get(FIELD_END):
+        _end = url_params.pop(FIELD_END)[0]
+        querys.append("{}:[* TO {}]".format(FIELD_DATETIME_START, _end))
 
     # Set version min and max
     if url_params.get(FIELD_MIN_VERSION):
