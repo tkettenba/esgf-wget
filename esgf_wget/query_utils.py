@@ -10,18 +10,18 @@ from .local_settings import ESGF_SOLR_SHARDS_XML, \
                             ESGF_SOLR_URL
 
 # reserved query keywords
-OFFSET = "offset"  
-LIMIT = "limit"  
+OFFSET = "offset"
+LIMIT = "limit"
 QUERY = "query"
-DISTRIB = "distrib"  
-SHARDS = "shards"  
-FROM = "from"  
-TO = "to"  
-SORT = "sort"  
+DISTRIB = "distrib"
+SHARDS = "shards"
+FROM = "from"
+TO = "to"
+SORT = "sort"
 SIMPLE = "simple"
-    
-KEYWORDS = [ OFFSET, LIMIT, QUERY, DISTRIB, SHARDS, FROM, TO, SORT, SIMPLE ]
-            
+
+KEYWORDS = [OFFSET, LIMIT, QUERY, DISTRIB, SHARDS, FROM, TO, SORT, SIMPLE]
+
 # standard metadata fields, always included for each result (if available)
 FIELD_ID = "id"
 FIELD_TYPE = "type"
@@ -39,12 +39,12 @@ FIELD_URL = "url"
 FIELD_ACCESS = "access"
 FIELD_XLINK = "xlink"
 FIELD_SIZE = "size"
-FIELD_DATASET_ID = "dataset_id" # note: generic notation to allow parent-child relations beyond just datasets   
+FIELD_DATASET_ID = "dataset_id"
 FIELD_TRACKING_ID = "tracking_id"
 FIELD_VERSION = "version"
 FIELD_VERSION_ = "_version_"
-FIELD_MAX_VERSION = "max_version"  
-FIELD_MIN_VERSION = "min_version"  
+FIELD_MAX_VERSION = "max_version"
+FIELD_MIN_VERSION = "min_version"
 FIELD_SCORE = "score"
 FIELD_UNITS = "units"
 
@@ -58,10 +58,10 @@ FIELD_DATASET_ID_TEMPLATE = "dataset_id_template_"
 FIELD_DATETIME_START = "datetime_start"
 FIELD_DATETIME_STOP = "datetime_stop"
 FIELD_TEXT = "text"
-        
+
 # special query fields for open search geo extension
-FIELD_BBOX ="bbox"  # west, south, east, north
-FIELD_LAT ="lat"
+FIELD_BBOX = "bbox"  # west, south, east, north
+FIELD_LAT = "lat"
 FIELD_LON = "lon"
 FIELD_LOCATION = "location"
 FIELD_RADIUS = "radius"
@@ -76,7 +76,7 @@ FIELD_HEIGHT_UNITS = "height_units"
 FIELD_VARIABLE_UNITS = "variable_units"
 FIELD_GEO = "geo"
 FIELD_GEO_UNITS = "geo_units"
-    
+
 # special query fields for open search time extension
 FIELD_START = "start"
 FIELD_END = "end"
@@ -84,12 +84,15 @@ FIELD_END = "end"
 # special query fields for the wget scirpt generator
 FIELD_WGET_PATH = "download_structure"
 FIELD_WGET_EMPTYPATH = "download_emptypath"
-    
+
 # fields that are always allowed in queries, in addition to configured facets
-CORE_QUERY_FIELDS = [ 
-        FIELD_ID, FIELD_TYPE, FIELD_REPLICA, FIELD_RETRACTED, FIELD_LATEST, FIELD_MASTER_ID, FIELD_INSTANCE_ID, FIELD_DRS_ID,
-        FIELD_TITLE, FIELD_DESCRIPTION, FIELD_TIMESTAMP, FIELD_TIMESTAMP_, FIELD_URL, FIELD_XLINK, FIELD_SIZE, 
-        FIELD_NUMBER_OF_FILES, FIELD_NUMBER_OF_AGGREGATIONS, FIELD_DATASET_ID, FIELD_TRACKING_ID, FIELD_ACCESS,
+CORE_QUERY_FIELDS = [
+        FIELD_ID, FIELD_TYPE, FIELD_REPLICA, FIELD_RETRACTED, FIELD_LATEST,
+        FIELD_MASTER_ID, FIELD_INSTANCE_ID, FIELD_DRS_ID,
+        FIELD_TITLE, FIELD_DESCRIPTION, FIELD_TIMESTAMP, FIELD_TIMESTAMP_,
+        FIELD_URL, FIELD_XLINK, FIELD_SIZE,
+        FIELD_NUMBER_OF_FILES, FIELD_NUMBER_OF_AGGREGATIONS,
+        FIELD_DATASET_ID, FIELD_TRACKING_ID, FIELD_ACCESS,
         FIELD_VERSION, FIELD_MAX_VERSION, FIELD_MIN_VERSION,
         FIELD_CHECKSUM, FIELD_CHECKSUM_TYPE, FIELD_DATA_NODE, FIELD_INDEX_NODE,
         FIELD_BBOX, FIELD_LAT, FIELD_LON, FIELD_RADIUS, FIELD_POLYGON,
@@ -101,14 +104,16 @@ CORE_QUERY_FIELDS = [
 NOT_FACETS = [
     FIELD_ID, FIELD_MASTER_ID, FIELD_INSTANCE_ID,
     FIELD_DATASET_ID, FIELD_DATASET_ID_TEMPLATE, FIELD_DRS_ID,
-    FIELD_DATETIME_START, FIELD_DATETIME_STOP, 
-    FIELD_EAST_DEGREES, FIELD_WEST_DEGREES, FIELD_NORTH_DEGREES, FIELD_SOUTH_DEGREES,
+    FIELD_DATETIME_START, FIELD_DATETIME_STOP,
+    FIELD_EAST_DEGREES, FIELD_WEST_DEGREES,
+    FIELD_NORTH_DEGREES, FIELD_SOUTH_DEGREES,
     FIELD_BBOX, FIELD_LAT, FIELD_LON, FIELD_RADIUS, FIELD_POLYGON,
     FIELD_HEIGHT_BOTTOM, FIELD_HEIGHT_TOP, FIELD_HEIGHT_UNITS,
     FIELD_LATEST, FIELD_REPLICA, FIELD_RETRACTED,
     FIELD_NUMBER_OF_FILES, FIELD_NUMBER_OF_AGGREGATIONS,
     FIELD_TRACKING_ID,
-    FIELD_TIMESTAMP, FIELD_TITLE, FIELD_DESCRIPTION, FIELD_URL, FIELD_XLINK, FIELD_SIZE, 
+    FIELD_TIMESTAMP, FIELD_TITLE, FIELD_DESCRIPTION,
+    FIELD_URL, FIELD_XLINK, FIELD_SIZE,
     FIELD_TEXT,
     FIELD_TYPE,
     FIELD_VARIABLE_UNITS,
@@ -117,35 +122,42 @@ NOT_FACETS = [
     FIELD_SCORE, FIELD_UNITS
     ]
 
+
 def split_value(value):
     """
-    Utility method to split an HTTP parameter value into comma-separated values
-	but keep intact patterns such as "CESM1(CAM5.1,FV2)"
+        Utility method to split an HTTP parameter value into comma-separated
+        values but keep intact patterns such as "CESM1(CAM5.1,FV2)
     """
-    
+
     # first split by comma
     values = [v.strip() for v in value.split(',')]
     values_length = len(values)
 
     if len(values) == 1:  # no splitting occurred
         return values
-    else: # possibly re-assemble broken pieces
+    else:  # possibly re-assemble broken pieces
         _values = []
         i = 0
         while i < values_length:
             if i < values_length - 1:
-                if values[i].find('(') >= 0 and values[i].find(')') < 0 \
-                    and values[i+1].find(')') >= 0 and values[i+1].find('(') < 0:
-                    _values.append(values[i]+','+values[i+1]) # re-assemble
-                    i += 1 # skip next value
-                elif values[i].find('[') >= 0 and values[i].find(']') < 0 \
-                    and values[i+1].find(']') >= 0 and values[i+1].find('[') < 0:
-                    _values.append(values[i]+','+values[i+1]) # re-assemble
-                    i += 1 # skip next value
-                elif values[i].find('{') >= 0 and values[i].find('}') < 0 \
-                    and values[i+1].find('}') >= 0 and values[i+1].find('{') < 0:						
-                    _values.append(values[i]+','+values[i+1]) # re-assemble
-                    i += 1 # skip next value
+                if values[i].find('(') >= 0 \
+                        and values[i].find(')') < 0 \
+                        and values[i+1].find(')') >= 0 \
+                        and values[i+1].find('(') < 0:
+                    _values.append(values[i]+','+values[i+1])  # re-assemble
+                    i += 1  # skip next value
+                elif values[i].find('[') >= 0 \
+                        and values[i].find(']') < 0 \
+                        and values[i+1].find(']') >= 0 \
+                        and values[i+1].find('[') < 0:
+                    _values.append(values[i]+','+values[i+1])  # re-assemble
+                    i += 1  # skip next value
+                elif values[i].find('{') >= 0 \
+                        and values[i].find('}') < 0 \
+                        and values[i+1].find('}') >= 0 \
+                        and values[i+1].find('{') < 0:
+                    _values.append(values[i]+','+values[i+1])  # re-assemble
+                    i += 1  # skip next value
                 else:
                     _values.append(values[i])
             else:
@@ -154,10 +166,11 @@ def split_value(value):
 
         # convert listo into array
         return _values
-        
+
+
 def get_solr_shards_from_xml():
     """
-    Get Solr shards from the XML file specified in the local settings 
+    Get Solr shards from the XML file specified in the local settings
     as ESGF_SOLR_SHARDS_XML
     """
 
@@ -169,13 +182,14 @@ def get_solr_shards_from_xml():
             shard_list.append(value.text)
     return shard_list
 
+
 def get_facets_from_solr():
     """
     Get valid facets currently used by the dataset Solr.
     """
 
     query_url = ESGF_SOLR_URL + '/datasets/select'
-    query_params = dict(q='*:*', 
+    query_params = dict(q='*:*',
                         wt='csv',
                         rows=0)
 
@@ -188,5 +202,5 @@ def get_facets_from_solr():
 
     # Remove fields that should NOT be used as facets
     _facets = [f for f in facets if f not in NOT_FACETS]
-    
+
     return facets

@@ -16,8 +16,10 @@ from .local_settings import ESGF_SOLR_URL, \
                             WGET_SCRIPT_FILE_MAX_LIMIT, \
                             WGET_MAX_DIR_LENGTH
 
+
 def home(request):
     return HttpResponse('esgf-wget')
+
 
 @require_http_methods(['GET', 'POST'])
 @csrf_exempt
@@ -52,9 +54,9 @@ def generate_wget_script(request):
         if param[-1] == '!':
             param = param[:-1]
         if param not in KEYWORDS \
-            and param not in CORE_QUERY_FIELDS \
-            and param not in solr_facets:
-            return HttpResponse('Invalid HTTP query parameter=%s'%param)
+                and param not in CORE_QUERY_FIELDS \
+                and param not in solr_facets:
+            return HttpResponse('Invalid HTTP query parameter=%s' % param)
 
     # Create list of parameters to be saved in the script
     url_params_list = []
@@ -74,17 +76,20 @@ def generate_wget_script(request):
             ts_to = timestamp_to
         else:
             ts_to = '*'
-        timestamp_from_to = "{}:[{} TO {}]".format(FIELD_TIMESTAMP_, ts_from, ts_to)
+        timestamp_from_to = "{}:[{} TO {}]".format(FIELD_TIMESTAMP_,
+                                                   ts_from, ts_to)
         querys.append(timestamp_from_to)
 
     # Set datetime start and stop
     if url_params.get(FIELD_DATETIME_START):
         datetime_start = url_params.pop(FIELD_DATETIME_START)[0]
-        querys.append("{}:[{} TO *]".format(FIELD_DATETIME_START, datetime_start))
+        querys.append("{}:[{} TO *]".format(FIELD_DATETIME_START,
+                                            datetime_start))
 
     if url_params.get(FIELD_DATETIME_STOP):
         datetime_stop = url_params.pop(FIELD_DATETIME_STOP)[0]
-        querys.append("{}:[* TO {}]".format(FIELD_DATETIME_STOP, datetime_stop))
+        querys.append("{}:[* TO {}]".format(FIELD_DATETIME_STOP,
+                                            datetime_stop))
 
     # Set version min and max
     if url_params.get(FIELD_MIN_VERSION):
@@ -115,7 +120,8 @@ def generate_wget_script(request):
         elif use_simple_param == 'true':
             script_template_file = 'wget-simple-template.sh'
         else:
-            return HttpResponse('Parameter \"%s\" must be set to true or false.'%SIMPLE)
+            msg = 'Parameter \"%s\" must be set to true or false.' % SIMPLE
+            return HttpResponse(msg)
 
     # Enable distributed search
     if url_params.get(DISTRIB):
@@ -125,7 +131,8 @@ def generate_wget_script(request):
         elif use_distrib_param == 'true':
             use_distrib = True
         else:
-            return HttpResponse('Parameter \"%s\" must be set to true or false.'%DISTRIB)
+            msg = 'Parameter \"%s\" must be set to true or false.' % DISTRIB
+            return HttpResponse(msg)
 
     # Enable sorting of records
     if url_params.get(SORT):
@@ -135,7 +142,8 @@ def generate_wget_script(request):
         elif use_sort_param == 'true':
             use_sort = True
         else:
-            return HttpResponse('Parameter \"%s\" must be set to true or false.'%SORT)
+            msg = 'Parameter \"%s\" must be set to true or false.' % SORT
+            return HttpResponse(msg)
 
     # Use Solr shards requested from GET/POST
     if url_params.get(SHARDS):
@@ -143,7 +151,8 @@ def generate_wget_script(request):
 
     # Set file number limit within a set maximum number
     if url_params.get(LIMIT):
-        file_limit = min(int(url_params.pop(LIMIT)[0]), WGET_SCRIPT_FILE_MAX_LIMIT)
+        _limit = int(url_params.pop(LIMIT)[0])
+        file_limit = min(_limit, WGET_SCRIPT_FILE_MAX_LIMIT)
 
     # Set the starting index for the returned records from the query
     if url_params.get(OFFSET):
@@ -155,11 +164,12 @@ def generate_wget_script(request):
         if url_params.get(bc):
             bc_value = url_params.pop(bc)[0].lower()
             if bc_value == 'false' or bc_value == 'true':
-                file_query.append('%s:%s'%(bc, bc_value))
+                file_query.append('%s:%s' % (bc, bc_value))
             else:
-                return HttpResponse('Parameter \"%s\" must be set to true or false.'%bc)
+                msg = 'Parameter \"%s\" must be set to true or false.' % bc
+                return HttpResponse(msg)
 
-    # Get directory structure for downloaded files 
+    # Get directory structure for downloaded files
     if url_params.get(FIELD_WGET_PATH):
         wget_path_facets = url_params.pop(FIELD_WGET_PATH)[0].split(',')
 
@@ -172,7 +182,8 @@ def generate_wget_script(request):
         if param[-1] == '!':
             param = '-' + param[:-1]
 
-        # Split values separated by commas but don't split at commas inside parentheses
+        # Split values separated by commas
+        # but don't split at commas inside parentheses
         # (i.e. cases such as "CESM1(CAM5.1,FV2)")
         split_value_list = []
         for v in value_list:
@@ -188,15 +199,16 @@ def generate_wget_script(request):
     # Get facets for the file name, URL, checksum
     file_attribute_set = set(['title', 'url', 'checksum_type', 'checksum'])
 
-    # Get facets for the download directory structure, and remove duplicate facets
+    # Get facets for the download directory structure,
+    # and remove duplicate facets
     file_attribute_set = file_attribute_set.union(set(wget_path_facets))
     file_attributes = list(file_attribute_set)
 
     # Solr query parameters
-    query_params = dict(q=query_string, 
-                        wt='json', 
-                        facet='true', 
-                        fl=file_attributes, 
+    query_params = dict(q=query_string,
+                        wt='json',
+                        facet='true',
+                        fl=file_attributes,
                         fq=file_query,
                         start=file_offset,
                         limit=file_limit,
@@ -208,7 +220,8 @@ def generate_wget_script(request):
     else:
         query_params.update(dict(sort='id asc'))
 
-    # Use shards for distributed search if 'distrib' is true, otherwise use only local search
+    # Use shards for distributed search if 'distrib' is true,
+    # otherwise use only local search
     if use_distrib:
         if len(requested_shards) > 0:
             shards = ','.join([s + '/files' for s in requested_shards])
@@ -229,8 +242,8 @@ def generate_wget_script(request):
         filename = file_info['title']
         checksum_type = file_info['checksum_type'][0]
         checksum = file_info['checksum'][0]
-        # Create directory structure from facets specified by 'download_structure'
-        # If a facet is not found, then the value of 'download_emptypath' will be used
+        # Create directory structure from facet values
+        # If the facet is not found, then use the empty path value
         dir_struct = []
         for facet in wget_path_facets:
             facet_value = wget_empty_path
@@ -239,9 +252,10 @@ def generate_wget_script(request):
                     facet_value = file_info[facet][0]
                 else:
                     facet_value = file_info[facet]
-            # Prevent strange values while generating names as well as too long names
+            # Prevent strange values while generating names
             facet_value = facet_value.replace("['<>?*\"\n\t\r\0]", "")
             facet_value = facet_value.replace("[ /\\\\|:;]+", "_")
+            # Limit length of value to WGET_MAX_DIR_LENGTH
             if len(facet_value) > WGET_MAX_DIR_LENGTH:
                 facet_value = facet_value[:WGET_MAX_DIR_LENGTH]
             dir_struct.append(facet_value)
@@ -252,9 +266,9 @@ def generate_wget_script(request):
             for url in file_info['url']:
                 url_split = url.split('|')
                 if url_split[2] == 'HTTPServer':
-                    file_entry = dict(url=url_split[0], 
-                                    checksum_type=checksum_type, 
-                                    checksum=checksum)
+                    file_entry = dict(url=url_split[0],
+                                      checksum_type=checksum_type,
+                                      checksum=checksum)
                     file_list[file_path] = file_entry
                     break
 
@@ -264,18 +278,18 @@ def generate_wget_script(request):
         return HttpResponse('No files found for datasets.')
     elif num_files > file_limit:
         warning_message = 'Warning! The total number of files was {} ' \
-                          'but this script will only process {}.'.format(num_files, file_limit)
+                          'but this script will only process {}.' \
+                          .format(num_files, file_limit)
 
-    # Warning message about files that were skipped 
+    # Warning message about files that were skipped
     # to prevent overwriting similarly-named files.
-    skipped_files_warning = None
+    skip_msg = 'There were files with the same name which were requested ' \
+               'to be download to the same directory. To avoid overwriting ' \
+               'the previous downloaded one they were skipped.\n' \
+               'Please use the parameter \'download_structure\' ' \
+               'to set up unique directories for them.'
     if num_files > len(file_list):
-        skipped_files_warning = 'There were files with the same name which were requested ' \
-                                'to be download to the same directory. To avoid overwriting ' \
-                                'the previous downloaded one they were skipped.\n' \
-                                'Please use the parameter \'download_structure\' ' \
-                                'to set up unique directories for them.'
-        warning_message = '{}\n{}'.format(warning_message, skipped_files_warning)
+        warning_message = '{}\n{}'.format(warning_message, skip_msg)
 
     # Build wget script
     current_datetime = datetime.datetime.now()
@@ -288,7 +302,8 @@ def generate_wget_script(request):
     wget_script = render(request, script_template_file, context)
 
     script_filename = current_datetime.strftime('wget-%Y%m%d%H%M%S.sh')
+    response_content = 'attachment; filename={}'.format(script_filename)
 
     response = HttpResponse(wget_script, content_type='text/x-sh')
-    response['Content-Disposition'] = 'attachment; filename={}'.format(script_filename)
+    response['Content-Disposition'] = response_content
     return response

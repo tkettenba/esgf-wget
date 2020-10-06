@@ -16,7 +16,7 @@ Including another URLconf
 from django.urls import path
 
 from . import views
-    
+
 urlpatterns = [
     path('', views.home, name='home'),
     path('wget', views.generate_wget_script, name='wget'),
