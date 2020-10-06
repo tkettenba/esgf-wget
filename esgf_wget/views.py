@@ -13,7 +13,8 @@ from .query_utils import *
 
 from .local_settings import ESGF_SOLR_URL, \
                             WGET_SCRIPT_FILE_DEFAULT_LIMIT, \
-                            WGET_SCRIPT_FILE_MAX_LIMIT
+                            WGET_SCRIPT_FILE_MAX_LIMIT, \
+                            WGET_MAX_DIR_LENGTH
 
 def home(request):
     return HttpResponse('esgf-wget')
@@ -28,7 +29,10 @@ def generate_wget_script(request):
     use_sort = False
     use_distrib = True
     requested_shards = []
+    wget_path_facets = []
+    wget_empty_path = ''
     script_template_file = 'wget-template.sh'
+
     xml_shards = get_solr_shards_from_xml()
     solr_facets = get_facets_from_solr()
 
@@ -154,7 +158,14 @@ def generate_wget_script(request):
                 file_query.append('%s:%s'%(bc, bc_value))
             else:
                 return HttpResponse('Parameter \"%s\" must be set to true or false.'%bc)
-    
+
+    # Get directory structure for downloaded files 
+    if url_params.get(FIELD_WGET_PATH):
+        wget_path_facets = url_params.pop(FIELD_WGET_PATH)[0].split(',')
+
+    if url_params.get(FIELD_WGET_EMPTYPATH):
+        wget_empty_path = url_params.pop(FIELD_WGET_EMPTYPATH)[0]
+
     # Collect remaining constraints
     for param, value_list in url_params.lists():
         # Check for negative constraints
@@ -174,7 +185,14 @@ def generate_wget_script(request):
             fq = '{}:({})'.format(param, ' || '.join(split_value_list))
         file_query.append(fq)
 
-    file_attributes = ['title', 'url', 'checksum_type', 'checksum']
+    # Get facets for the file name, URL, checksum
+    file_attribute_set = set(['title', 'url', 'checksum_type', 'checksum'])
+
+    # Get facets for the download directory structure, and remove duplicate facets
+    file_attribute_set = file_attribute_set.union(set(wget_path_facets))
+    file_attributes = list(file_attribute_set)
+
+    # Solr query parameters
     query_params = dict(q=query_string, 
                         wt='json', 
                         facet='true', 
@@ -200,32 +218,64 @@ def generate_wget_script(request):
             query_params.update(dict(shards=shards))
 
     # Fetch files for the query
-    file_list = []
+    file_list = {}
     query_encoded = urllib.parse.urlencode(query_params, doseq=True).encode()
     req = urllib.request.Request(query_url, query_encoded)
     with urllib.request.urlopen(req) as response:
         results = json.loads(response.read().decode())
+
     num_files = results['response']['numFound']
     for file_info in results['response']['docs']:
         filename = file_info['title']
         checksum_type = file_info['checksum_type'][0]
         checksum = file_info['checksum'][0]
-        for url in file_info['url']:
-            url_split = url.split('|')
-            if url_split[2] == 'HTTPServer':
-                file_list.append(dict(filename=filename, 
-                                      url=url_split[0], 
-                                      checksum_type=checksum_type, 
-                                      checksum=checksum))
-                break
+        # Create directory structure from facets specified by 'download_structure'
+        # If a facet is not found, then the value of 'download_emptypath' will be used
+        dir_struct = []
+        for facet in wget_path_facets:
+            facet_value = wget_empty_path
+            if facet in file_info:
+                if isinstance(file_info[facet], list):
+                    facet_value = file_info[facet][0]
+                else:
+                    facet_value = file_info[facet]
+            # Prevent strange values while generating names as well as too long names
+            facet_value = facet_value.replace("['<>?*\"\n\t\r\0]", "")
+            facet_value = facet_value.replace("[ /\\\\|:;]+", "_")
+            if len(facet_value) > WGET_MAX_DIR_LENGTH:
+                facet_value = facet_value[:WGET_MAX_DIR_LENGTH]
+            dir_struct.append(facet_value)
+        dir_struct.append(filename)
+        file_path = os.path.join(*dir_struct)
+        # Only add a file to the list if its file path is not already present
+        if file_path not in file_list:
+            for url in file_info['url']:
+                url_split = url.split('|')
+                if url_split[2] == 'HTTPServer':
+                    file_entry = dict(url=url_split[0], 
+                                    checksum_type=checksum_type, 
+                                    checksum=checksum)
+                    file_list[file_path] = file_entry
+                    break
 
     # Limit the number of files to the maximum
-    wget_warn = None
+    warning_message = None
     if num_files == 0:
         return HttpResponse('No files found for datasets.')
     elif num_files > file_limit:
-        wget_warn = 'Warning! The total number of files was {} ' \
-                    'but this script will only process {}.'.format(num_files, file_limit)
+        warning_message = 'Warning! The total number of files was {} ' \
+                          'but this script will only process {}.'.format(num_files, file_limit)
+
+    # Warning message about files that were skipped 
+    # to prevent overwriting similarly-named files.
+    skipped_files_warning = None
+    if num_files > len(file_list):
+        skipped_files_warning = 'There were files with the same name which were requested ' \
+                                'to be download to the same directory. To avoid overwriting ' \
+                                'the previous downloaded one they were skipped.\n' \
+                                'Please use the parameter \'download_structure\' ' \
+                                'to set up unique directories for them.'
+        warning_message = '{}\n{}'.format(warning_message, skipped_files_warning)
 
     # Build wget script
     current_datetime = datetime.datetime.now()
@@ -234,7 +284,7 @@ def generate_wget_script(request):
     context = dict(timestamp=timestamp,
                    url_params=url_params_list,
                    files=file_list,
-                   warning_message=wget_warn)
+                   warning_message=warning_message)
     wget_script = render(request, script_template_file, context)
 
     script_filename = current_datetime.strftime('wget-%Y%m%d%H%M%S.sh')

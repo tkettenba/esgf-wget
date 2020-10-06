@@ -19,3 +19,6 @@ WGET_SCRIPT_FILE_DEFAULT_LIMIT = 1000
 
 # Maximum number of files allowed in a wget script
 WGET_SCRIPT_FILE_MAX_LIMIT = 100000
+
+# Maximum length for facet values used in the wget directory structure
+WGET_MAX_DIR_LENGTH = 50

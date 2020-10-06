@@ -32,7 +32,7 @@ url_params=(
 
 #These are the embedded files to be downloaded
 download_files="$(cat <<EOF--dataset.file.url.chksum_type.chksum
-{% spaceless %}{% for file in files %}'{{file.filename}}' '{{file.url}}' '{{file.checksum_type}}' '{{file.checksum}}'
+{% spaceless %}{% for filename, file in files.items %}'{{filename}}' '{{file.url}}' '{{file.checksum_type}}' '{{file.checksum}}'
 {% endfor %}{% endspaceless %}
 EOF--dataset.file.url.chksum_type.chksum
 )"
@@ -368,7 +368,7 @@ echo "Running $(basename $0) version: $version"
 echo "Use $(basename $0) -h for help."$'\n'
 
 cat <<'EOF-MESSAGE'
-{% if warning_message %}{{ warning_message }}
+{% if warning_message %}{{ warning_message|safe }}
 {% endif %}Script created for {{ files|length }} file(s)
 (The count won't match if you manually edit this file!)
 
