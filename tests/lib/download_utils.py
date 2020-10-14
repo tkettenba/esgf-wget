@@ -49,7 +49,7 @@ def get_wget_bash(shards, wget_node, dataset_ids, temp_dir, limit=None):
         params = params + limit_param
 
     # print("xxx params: ", params)
-    cmd = "curl {params} {url} -o {dir}/wget.bash".format(params=params,
+    cmd = "curl {url} {params} -o {dir}/wget.bash".format(params=params,
                                                           url=url,
                                                           dir=temp_dir)
     

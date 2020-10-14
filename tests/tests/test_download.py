@@ -14,7 +14,8 @@ from search_utils import search_data_files
 from download_utils import get_wget_bash, run_wget_bash
 
 test_data = []
-with open("/Users/muryanto1/work/wget_api/tests/test_data/test_data.json") as f:
+
+with open("tests/test_data/test_data.json") as f:
     test_data_dict = json.load(f)
     for test_descr in test_data_dict:
         a_test_dict = test_data_dict[test_descr]
@@ -32,7 +33,9 @@ def test_download(index_node, shards, dataset_ids, do_download):
     #
     data_files = search_data_files(index_node, dataset_ids, temp_dir)
 
-    wget_node = "esgf-dev2.llnl.gov"
+    # REVISIT
+    # wget_node = "esgf-dev2.llnl.gov"
+    wget_node = "nimbus15.llnl.gov:8443"
     ret = get_wget_bash(shards, wget_node, dataset_ids, temp_dir)
     assert ret == SUCCESS
 
@@ -42,7 +45,8 @@ def test_download(index_node, shards, dataset_ids, do_download):
     
     assert ret == SUCCESS
 
-# pytest --capture=tee-sys tests/test_download_one_dataset_id.py
+# from the root of the repo
+# pytest --capture=tee-sys tests/tests/test_download.py
 
 
 
