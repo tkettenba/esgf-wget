@@ -122,6 +122,14 @@ NOT_FACETS = [
     FIELD_SCORE, FIELD_UNITS
     ]
 
+# unsupported fields
+UNSUPPORTED_FIELDS = [
+    FIELD_LAT,
+    FIELD_LON,
+    FIELD_LOCATION,
+    FIELD_RADIUS,
+    FIELD_POLYGON
+]
 
 def split_value(value):
     """

@@ -1,5 +1,5 @@
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -47,7 +47,7 @@ def generate_wget_script(request):
     elif request.method == 'GET':
         url_params = request.GET.copy()
     else:
-        return HttpResponse('Request method must be POST or GET.')
+        return HttpResponseBadRequest('Request method must be POST or GET.')
 
     # Catch invalid parameters
     for param in url_params.keys():
@@ -56,7 +56,14 @@ def generate_wget_script(request):
         if param not in KEYWORDS \
                 and param not in CORE_QUERY_FIELDS \
                 and param not in solr_facets:
-            return HttpResponse('Invalid HTTP query parameter=%s' % param)
+            msg = 'Invalid HTTP query parameter=%s' % param
+            return HttpResponseBadRequest(msg)
+
+    # Catch unsupported fields
+    for uf in UNSUPPORTED_FIELDS:
+        if url_params.get(uf):
+            msg = 'Unsupported parameter: %s' % uf
+            return HttpResponseBadRequest(msg)
 
     # Create list of parameters to be saved in the script
     url_params_list = []
@@ -119,7 +126,7 @@ def generate_wget_script(request):
             script_template_file = 'wget-simple-template.sh'
         else:
             msg = 'Parameter \"%s\" must be set to true or false.' % SIMPLE
-            return HttpResponse(msg)
+            return HttpResponseBadRequest(msg)
 
     # Enable distributed search
     if url_params.get(DISTRIB):
@@ -130,7 +137,7 @@ def generate_wget_script(request):
             use_distrib = True
         else:
             msg = 'Parameter \"%s\" must be set to true or false.' % DISTRIB
-            return HttpResponse(msg)
+            return HttpResponseBadRequest(msg)
 
     # Enable sorting of records
     if url_params.get(SORT):
@@ -141,7 +148,7 @@ def generate_wget_script(request):
             use_sort = True
         else:
             msg = 'Parameter \"%s\" must be set to true or false.' % SORT
-            return HttpResponse(msg)
+            return HttpResponseBadRequest(msg)
 
     # Use Solr shards requested from GET/POST
     if url_params.get(SHARDS):
@@ -165,7 +172,7 @@ def generate_wget_script(request):
                 file_query.append('%s:%s' % (bc, bc_value))
             else:
                 msg = 'Parameter \"%s\" must be set to true or false.' % bc
-                return HttpResponse(msg)
+                return HttpResponseBadRequest(msg)
 
     # Get directory structure for downloaded files
     if url_params.get(FIELD_WGET_PATH):
@@ -286,7 +293,7 @@ def generate_wget_script(request):
                'the previous downloaded one they were skipped.\n' \
                'Please use the parameter \'download_structure\' ' \
                'to set up unique directories for them.'
-    if num_files > len(file_list):
+    if min(num_files, file_limit) > len(file_list):
         warning_message = '{}\n{}'.format(warning_message, skip_msg)
 
     # Build wget script
