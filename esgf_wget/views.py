@@ -71,6 +71,11 @@ def generate_wget_script(request):
         for v in value_list:
             url_params_list.append('{}={}'.format(param, v))
 
+    # Set a Solr query string
+    if url_params.get(QUERY):
+        _query = url_params.pop(QUERY)[0]
+        querys.append(_query)
+
     # Set range for timestamps to query
     if url_params.get(FROM) or url_params.get(TO):
         if url_params.get(FROM):
