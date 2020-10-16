@@ -129,7 +129,8 @@ UNSUPPORTED_FIELDS = [
     FIELD_LOCATION,
     FIELD_RADIUS,
     FIELD_POLYGON
-]
+    ]
+
 
 def split_value(value):
     """
