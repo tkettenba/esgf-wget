@@ -49,6 +49,11 @@ def generate_wget_script(request):
     else:
         return HttpResponseBadRequest('Request method must be POST or GET.')
 
+    # If no parameters were passed to the API,
+    # then default to limit=1 and distrib=false
+    if len(url_params.keys()) == 0:
+        url_params.update(dict(limit=1, distrib='false'))
+
     # Catch invalid parameters
     for param in url_params.keys():
         if param[-1] == '!':
