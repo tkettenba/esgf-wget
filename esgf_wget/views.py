@@ -9,7 +9,7 @@ import urllib.parse
 import datetime
 import json
 
-from .query_utils import *
+from esgf_wget.query_utils import *
 
 from .local_settings import ESGF_SOLR_URL, \
                             WGET_SCRIPT_FILE_DEFAULT_LIMIT, \
