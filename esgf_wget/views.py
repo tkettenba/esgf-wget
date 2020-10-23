@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.conf import settings
 
 import xml.etree.ElementTree as ET
 import urllib.request
@@ -11,15 +12,10 @@ import datetime
 import json
 import os
 
-from .local_settings import ESGF_SOLR_SHARDS_XML, \
-                            ESGF_SOLR_URL, \
-                            WGET_SCRIPT_FILE_DEFAULT_LIMIT, \
-                            WGET_SCRIPT_FILE_MAX_LIMIT
-
 def get_solr_shards_from_xml():
     shard_list = []
-    if os.path.isfile(ESGF_SOLR_SHARDS_XML):
-        tree = ET.parse(ESGF_SOLR_SHARDS_XML)
+    if os.path.isfile(settings.ESGF_SOLR_SHARDS_XML):
+        tree = ET.parse(settings.ESGF_SOLR_SHARDS_XML)
         root = tree.getroot()
         for value in root:
             shard_list.append(value.text)
@@ -32,8 +28,8 @@ def home(request):
 @csrf_exempt
 def generate_wget_script(request):
 
-    query_url = ESGF_SOLR_URL + '/files/select'
-    file_limit = WGET_SCRIPT_FILE_DEFAULT_LIMIT
+    query_url = settings.ESGF_SOLR_URL + '/files/select'
+    file_limit = settings.WGET_SCRIPT_FILE_DEFAULT_LIMIT
     use_distrib = True
     requested_shards = []
     script_template_file = 'wget-template.sh'
@@ -66,7 +62,7 @@ def generate_wget_script(request):
     if url_params.get('shards'):
         requested_shards = url_params['shards'].split(',')
     if url_params.get('limit'):
-        file_limit = min(int(url_params['limit']), WGET_SCRIPT_FILE_MAX_LIMIT)
+        file_limit = min(int(url_params['limit']), settings.WGET_SCRIPT_FILE_MAX_LIMIT)
     if url_params.get('dataset_id'):
         dataset_id_list = url_params.getlist('dataset_id')
     else:
