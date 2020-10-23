@@ -8,21 +8,27 @@ pip install -r requirements.txt
 ```
 This is ideally done through a virtual environment with virtualenv, or a conda environment using Anaconda Python.
 
-Copy the contents of local_settings_example.py to a file named local_settings.py inside the esgf-wget directory.
+Copy the contents of esgf-wget-config.cfg-template to a file named esgf-wget-config.cfg.  Copy the path of this config file to an environment variable `ESGF_WGET_CONFIG`.
 ```
 cd esgf-wget
-cp local_settings_example.py local_settings.py
+cp esgf-wget-config.cfg-template esgf-wget-config.cfg
+export ESGF_WGET_CONFIG=$(pwd)/esgf-wget-config.cfg
 ```
 
-Fill out the variables in local_settings.py.  Example below.
+Fill out the variables in esgf-wget-config.cfg.  Example below.
 ```
-ALLOWED_HOSTS = ['localhost']
+[django]
+ALLOWED_HOSTS = localhost,127.0.0.1
 
+# Expand the number of fields allowed for wget API
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1024
+
+[wget]
 # Address of ESGF Solr
-ESGF_SOLR_URL = 'localhost/solr'
+ESGF_SOLR_URL = localhost/solr
 
 # Path to XML file containing Solr shards
-ESGF_SOLR_SHARDS_XML = '/esg/config/esgf_shards_static.xml'
+ESGF_SOLR_SHARDS_XML = /esg/config/esgf_shards_static.xml
 
 # Default limit on the number of files allowed in a wget script
 WGET_SCRIPT_FILE_DEFAULT_LIMIT = 1000
