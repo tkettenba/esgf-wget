@@ -304,7 +304,10 @@ def generate_wget_script(request):
                'Please use the parameter \'download_structure\' ' \
                'to set up unique directories for them.'
     if min(num_files, file_limit) > len(file_list):
-        warning_message = '{}\n{}'.format(warning_message, skip_msg)
+        if warning_message:
+            warning_message = '{}\n{}'.format(warning_message, skip_msg)
+        else:
+            warning_message = skip_msg
 
     # Build wget script
     current_datetime = datetime.datetime.now()
