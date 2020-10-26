@@ -10,7 +10,6 @@ This is ideally done through a virtual environment with virtualenv, or a conda e
 
 Copy the contents of esgf-wget-config.cfg-template to a file named esgf-wget-config.cfg.  Copy the path of this config file to an environment variable `ESGF_WGET_CONFIG`.
 ```
-cd esgf-wget
 cp esgf-wget-config.cfg-template esgf-wget-config.cfg
 export ESGF_WGET_CONFIG=$(pwd)/esgf-wget-config.cfg
 ```
@@ -18,6 +17,12 @@ export ESGF_WGET_CONFIG=$(pwd)/esgf-wget-config.cfg
 Fill out the variables in esgf-wget-config.cfg.  Example below.
 ```
 [django]
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = ...
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
 ALLOWED_HOSTS = localhost,127.0.0.1
 
 # Expand the number of fields allowed for wget API
