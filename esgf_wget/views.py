@@ -3,6 +3,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.conf import settings
 
 import urllib.request
 import urllib.parse
@@ -10,11 +11,6 @@ import datetime
 import json
 
 from esgf_wget.query_utils import *
-
-from .local_settings import ESGF_SOLR_URL, \
-                            WGET_SCRIPT_FILE_DEFAULT_LIMIT, \
-                            WGET_SCRIPT_FILE_MAX_LIMIT, \
-                            WGET_MAX_DIR_LENGTH
 
 
 def home(request):
@@ -25,8 +21,8 @@ def home(request):
 @csrf_exempt
 def generate_wget_script(request):
 
-    query_url = ESGF_SOLR_URL + '/files/select'
-    file_limit = WGET_SCRIPT_FILE_DEFAULT_LIMIT
+    query_url = settings.ESGF_SOLR_URL + '/files/select'
+    file_limit = settings.WGET_SCRIPT_FILE_DEFAULT_LIMIT
     file_offset = 0
     use_sort = False
     use_distrib = True
@@ -167,7 +163,7 @@ def generate_wget_script(request):
     # Set file number limit within a set maximum number
     if url_params.get(LIMIT):
         _limit = int(url_params.pop(LIMIT)[0])
-        file_limit = min(_limit, WGET_SCRIPT_FILE_MAX_LIMIT)
+        file_limit = min(_limit, settings.WGET_SCRIPT_FILE_MAX_LIMIT)
 
     # Set the starting index for the returned records from the query
     if url_params.get(OFFSET):
@@ -271,8 +267,8 @@ def generate_wget_script(request):
             facet_value = facet_value.replace("['<>?*\"\n\t\r\0]", "")
             facet_value = facet_value.replace("[ /\\\\|:;]+", "_")
             # Limit length of value to WGET_MAX_DIR_LENGTH
-            if len(facet_value) > WGET_MAX_DIR_LENGTH:
-                facet_value = facet_value[:WGET_MAX_DIR_LENGTH]
+            if len(facet_value) > settings.WGET_MAX_DIR_LENGTH:
+                facet_value = facet_value[:settings.WGET_MAX_DIR_LENGTH]
             dir_struct.append(facet_value)
         dir_struct.append(filename)
         file_path = os.path.join(*dir_struct)

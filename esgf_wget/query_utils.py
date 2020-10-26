@@ -1,13 +1,12 @@
 
+from django.conf import settings
+
 from io import StringIO
 import xml.etree.ElementTree as ET
 import urllib.request
 import urllib.parse
 import csv
 import os
-
-from .local_settings import ESGF_SOLR_SHARDS_XML, \
-                            ESGF_SOLR_URL
 
 # reserved query keywords
 OFFSET = "offset"
@@ -179,13 +178,13 @@ def split_value(value):
 
 def get_solr_shards_from_xml():
     """
-    Get Solr shards from the XML file specified in the local settings
+    Get Solr shards from the XML file specified in the settings
     as ESGF_SOLR_SHARDS_XML
     """
 
     shard_list = []
-    if os.path.isfile(ESGF_SOLR_SHARDS_XML):
-        tree = ET.parse(ESGF_SOLR_SHARDS_XML)
+    if os.path.isfile(settings.ESGF_SOLR_SHARDS_XML):
+        tree = ET.parse(settings.ESGF_SOLR_SHARDS_XML)
         root = tree.getroot()
         for value in root:
             shard_list.append(value.text)
@@ -197,7 +196,7 @@ def get_facets_from_solr():
     Get valid facets currently used by the dataset Solr.
     """
 
-    query_url = ESGF_SOLR_URL + '/datasets/select'
+    query_url = settings.ESGF_SOLR_URL + '/datasets/select'
     query_params = dict(q='*:*',
                         wt='csv',
                         rows=0)
