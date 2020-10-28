@@ -13,6 +13,11 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 import configparser
 
+SECRET_KEY = os.getenv('ESGF_WGET_SECRET_KEY', default=None)
+
+if SECRET_KEY is None:
+    raise Exception('ESGF_WGET_SECRET_KEY is not set.')
+
 config = configparser.RawConfigParser()
 
 config_file = os.getenv('ESGF_WGET_CONFIG', default=None)
@@ -25,7 +30,6 @@ try:
 except IOError:
     raise Exception('Unable to load config file.')
 
-SECRET_KEY = config['django'].get('SECRET_KEY', '')
 DEBUG = config['django'].getboolean('DEBUG', True)
 ALLOWED_HOSTS = config['django'].get('ALLOWED_HOSTS', '').split(',')
 DATA_UPLOAD_MAX_NUMBER_FIELDS = config['django'].getint(
