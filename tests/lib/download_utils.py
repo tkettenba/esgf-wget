@@ -32,7 +32,8 @@ def compare_to_expected(expected_datafiles, downloaded_files):
 def get_wget_bash(shards, wget_node, dataset_ids, temp_dir, limit=None):
 
     print("xxx...get_wget_bash()...xxx")
-    url = "https://{n}/wget".format(n=wget_node)
+    # url = "https://{n}/wget".format(n=wget_node)
+    url = "{n}/wget".format(n=wget_node)
 
     params = ""
     for id in dataset_ids:
@@ -55,7 +56,6 @@ def get_wget_bash(shards, wget_node, dataset_ids, temp_dir, limit=None):
     
     ret = run_cmd(cmd)
     return ret
-
 
 def run_wget_bash(expected_datafiles, temp_dir, do_download):
 

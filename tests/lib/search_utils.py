@@ -14,11 +14,19 @@ def search_data_files(index_node, dataset_ids, temp_dir):
     for dataset_id_str in dataset_ids:
 
         dataset_id, data_node = dataset_id_str.split("|")
-        url = "https://{index}/search_files/{id}%7C{data}/{index}/".format(index=index_node,
-                                                                           data=data_node,
-                                                                           id=dataset_id)
+        param = "format=application%2fsolr%2bjson&type=File"
+        url = "https://{index}/esg-search/search?{p}&dataset_id={id}%7C{data}".format(index=index_node,
+                                                                                      p=param,
+                                                                                      data=data_node,
+                                                                                      id=dataset_id)
+        
+
+#        url = "https://{index}/search_files/{id}%7C{data}/{index}/".format(index=index_node,
+#                                                                           data=data_node,
+#                                                                           id=dataset_id)
+
         print("url: {u}".format(u=url))
-        cmd = "curl {url} -o {dir}/curl.out.json".format(url=url,
+        cmd = "curl \"{url}\" -o {dir}/curl.out.json".format(url=url,
                                                          dir=temp_dir)
         ret = run_cmd(cmd)
         if ret != SUCCESS:

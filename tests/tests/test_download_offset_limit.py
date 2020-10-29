@@ -13,19 +13,26 @@ from Const import SUCCESS, FAILURE
 from search_utils import search_data_files
 from download_utils import get_wget_bash, run_wget_bash
 
-test_data = []
-with open("/Users/muryanto1/work/wget_api/tests/test_data/test_offset_limit.json") as f:
-    test_data_dict = json.load(f)
-    for test_descr in test_data_dict:
-        a_test_dict = test_data_dict[test_descr]
-        test_tuple = tuple(a_test_dict[k] for k in ["index_node", "shards", "dataset_ids", "do_download", "offset", "limit"])
-        test_data.append(test_tuple)
+def read_in_data(test_case):
 
-print("test_data: {td}".format(td=test_data))
+    with open(os.environ["WGET_API_TEST_DATA"]) as f:
+        test_data_dict = json.load(f)
+        test_case_dict = test_data_dict[test_case]
+        return(test_case_dict["index_node"],
+               test_case_dict["shards"],
+               test_case_dict["dataset_ids"],
+	       test_case_dict["do_download"],
+               test_case_dict["offset"],
+               test_case_dict["limit"])
+    return(None)
+
+@pytest.mark.parametrize("download_offset_limit_test",
+                         ["1_dataset_id_multiple_ncs"])
+
         
-@pytest.mark.parametrize("index_node,shards,dataset_ids,do_download,offset,limit", test_data)
-def test_download_offset_limit(index_node, shards, dataset_ids, do_download, offset, limit):
+def test_download_offset_limit(data, download_offset_limit_test):
 
+    index_node, shards, dataset_ids, do_download, offset, limit  = read_in_data(download_offset_limit_test)
     temp_dir = tempfile.mkdtemp()
     #
     # index_node is for searching
@@ -34,7 +41,9 @@ def test_download_offset_limit(index_node, shards, dataset_ids, do_download, off
     for f in data_files:
         print("data file: {f}".format(f=f))
 
-    wget_node = "esgf-dev2.llnl.gov"
+    wget_node = os.environ["WGET_API_HOST_URL"]
+    assert wget_node
+    
     ret = get_wget_bash(shards, wget_node, dataset_ids, temp_dir, limit)
     assert ret == SUCCESS
 
@@ -45,5 +54,6 @@ def test_download_offset_limit(index_node, shards, dataset_ids, do_download, off
     
     assert ret == SUCCESS
 
-
-
+# from the root of the repo                                                                                                                                                    
+# export WGET_API_HOST_URL=https://nimbus15.llnl.gov:8443                                                                                                                      
+# pytest --capture=tee-sys --data `pwd`/tests/test_data/test_offset_limit.json tests/tests/test_download_offset_limit.py

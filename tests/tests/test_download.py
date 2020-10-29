@@ -13,20 +13,24 @@ from Const import SUCCESS, FAILURE
 from search_utils import search_data_files
 from download_utils import get_wget_bash, run_wget_bash
 
-test_data = []
+def read_in_data(test_case):
 
-with open("tests/test_data/test_data.json") as f:
-    test_data_dict = json.load(f)
-    for test_descr in test_data_dict:
-        a_test_dict = test_data_dict[test_descr]
-        test_tuple = tuple(a_test_dict[k] for k in ["index_node", "shards", "dataset_ids", "do_download"])
-        test_data.append(test_tuple)
+    with open(os.environ["WGET_API_TEST_DATA"]) as f:
+        test_data_dict = json.load(f)
+        test_case_dict = test_data_dict[test_case]
+        return(test_case_dict["index_node"],
+               test_case_dict["shards"],
+               test_case_dict["dataset_ids"],
+               test_case_dict["do_download"])
+    return(None)
 
-print("test_data: {td}".format(td=test_data))
-        
-@pytest.mark.parametrize("index_node,shards,dataset_ids,do_download", test_data)
-def test_download(index_node, shards, dataset_ids, do_download):
+@pytest.mark.parametrize("download_test", ["1_dataset_id_1_nc",
+                                           "1_dataset_id_multiple_ncs",
+                                           "2_dataset_id_multiple_nc"])
 
+def test_download(data, download_test):
+
+    index_node, shards, dataset_ids, do_download = read_in_data(download_test)
     temp_dir = tempfile.mkdtemp()
     #
     # index_node is for searching
@@ -34,8 +38,11 @@ def test_download(index_node, shards, dataset_ids, do_download):
     data_files = search_data_files(index_node, dataset_ids, temp_dir)
 
     # REVISIT
-    # wget_node = "esgf-dev2.llnl.gov"
-    wget_node = "nimbus15.llnl.gov:8443"
+    # wget_node = "http://esgf-dev2.llnl.gov"
+    # wget_node = "https://nimbus15.llnl.gov:8443"
+    wget_node = os.environ["WGET_API_HOST_URL"]
+    assert wget_node
+    
     ret = get_wget_bash(shards, wget_node, dataset_ids, temp_dir)
     assert ret == SUCCESS
 
@@ -46,7 +53,8 @@ def test_download(index_node, shards, dataset_ids, do_download):
     assert ret == SUCCESS
 
 # from the root of the repo
-# pytest --capture=tee-sys tests/tests/test_download.py
+# export WGET_API_HOST_URL=https://nimbus15.llnl.gov:8443
+# pytest --capture=tee-sys --data `pwd`/tests/test_data/test_data.json tests/tests/test_download.py
 
 
 
