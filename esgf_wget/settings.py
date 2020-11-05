@@ -41,6 +41,8 @@ WGET_SCRIPT_FILE_DEFAULT_LIMIT = config['wget'].getint(
     'WGET_SCRIPT_FILE_DEFAULT_LIMIT', 1000)
 WGET_SCRIPT_FILE_MAX_LIMIT = config['wget'].getint(
     'WGET_SCRIPT_FILE_MAX_LIMIT', 100000)
+WGET_MAX_DIR_LENGTH = config['wget'].getint(
+    'WGET_MAX_DIR_LENGTH', 50)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

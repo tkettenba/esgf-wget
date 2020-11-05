@@ -1,7 +1,7 @@
 #!/bin/bash
 
 download_files=(
-{% spaceless %}{% for file in files %}'{{file.url}}'
+{% spaceless %}{% for filename, file in files.items %}'{{file.url}}'
 {% endfor %}{% endspaceless %}
 )
 
