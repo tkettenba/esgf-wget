@@ -32,6 +32,7 @@ def generate_wget_script(request):
     script_template_file = 'wget-template.sh'
 
     xml_shards = get_solr_shards_from_xml()
+    allowed_projects = get_allowed_projects_from_json()
     solr_facets = get_facets_from_solr()
 
     querys = []
@@ -200,6 +201,26 @@ def generate_wget_script(request):
         for v in value_list:
             for sv in split_value(v):
                 split_value_list.append(sv)
+
+        # If the list of allowed projects is not empty,
+        # then check if the query is accessing projects not in the list
+        if allowed_projects:
+            msg = 'This query cannot be completed since the project, ' \
+                  '{project}, is not allowed to be accessed by this site. ' \
+                  'Please redo your query with unrestricted data only, ' \
+                  'and request {project} data from another site.'
+            projects_lower = [x.lower() for x in allowed_projects]
+            # Check project parameter
+            if param in [FIELD_PROJECT]:
+                for v in split_value_list:
+                    if v.lower() not in projects_lower:
+                        return HttpResponseBadRequest(msg.format(project=v))
+            # Check ID parameters
+            if param in ID_FIELDS:
+                for v in split_value_list:
+                    p = v.split('.')[0]
+                    if p.lower() not in projects_lower:
+                        return HttpResponseBadRequest(msg.format(project=p))
 
         if len(split_value_list) == 1:
             fq = '{}:{}'.format(param, split_value_list[0])
