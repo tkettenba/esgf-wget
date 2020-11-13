@@ -37,6 +37,9 @@ ESGF_SOLR_URL = localhost/solr
 # Path to XML file containing Solr shards
 ESGF_SOLR_SHARDS_XML = /esg/config/esgf_shards_static.xml
 
+# Path to JSON file containing allowed projects to access for datasets
+ESGF_ALLOWED_PROJECTS_JSON = /esg/config/esgf_allowed_projects.json
+
 # Default limit on the number of files allowed in a wget script
 WGET_SCRIPT_FILE_DEFAULT_LIMIT = 1000
 
