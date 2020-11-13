@@ -49,8 +49,8 @@ WGET_SCRIPT_FILE_MAX_LIMIT = 100000
 # Maximum length for facet values used in the wget directory structure
 WGET_MAX_DIR_LENGTH = 50
 ```
-### Solr shards XML file
-This file contains a list of Solr shards used by the ESGF Solr database for distributed search.  Example below.
+### ESGF_SOLR_SHARDS_XML
+A path to a XML file that contains a list of Solr shards used by the ESGF Solr database for distributed search.  Example below.
 ```
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <shards>
@@ -60,8 +60,8 @@ This file contains a list of Solr shards used by the ESGF Solr database for dist
 </shards>
 ```
 
-### Allowed projects JSON file
-This file contains a list of ESGF projects that are allowed to be used by this API.  Any project that is not listed will cause the API to reject the query.  Example below.
+### ESGF_ALLOWED_PROJECTS_JSON
+A path to a JSON file that contains a list of ESGF projects that are allowed to be used by this API.  Any project that is not listed will cause the API to reject the query.  Example below.
 ```
 {
     "allowed_projects": [
