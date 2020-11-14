@@ -37,6 +37,8 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = config['django'].getint(
 
 ESGF_SOLR_URL = config['wget'].get('ESGF_SOLR_URL', '')
 ESGF_SOLR_SHARDS_XML = config['wget'].get('ESGF_SOLR_SHARDS_XML', '')
+ESGF_ALLOWED_PROJECTS_JSON = config['wget'].get(
+    'ESGF_ALLOWED_PROJECTS_JSON', '')
 WGET_SCRIPT_FILE_DEFAULT_LIMIT = config['wget'].getint(
     'WGET_SCRIPT_FILE_DEFAULT_LIMIT', 1000)
 WGET_SCRIPT_FILE_MAX_LIMIT = config['wget'].getint(

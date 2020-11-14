@@ -5,6 +5,7 @@ from io import StringIO
 import xml.etree.ElementTree as ET
 import urllib.request
 import urllib.parse
+import json
 import csv
 import os
 
@@ -84,6 +85,10 @@ FIELD_END = "end"
 FIELD_WGET_PATH = "download_structure"
 FIELD_WGET_EMPTYPATH = "download_emptypath"
 
+# fields that specify project
+FIELD_PROJECT = "project"
+FIELD_MIP_ERA = "mip_era"
+
 # fields that are always allowed in queries, in addition to configured facets
 CORE_QUERY_FIELDS = [
         FIELD_ID, FIELD_TYPE, FIELD_REPLICA, FIELD_RETRACTED, FIELD_LATEST,
@@ -96,7 +101,8 @@ CORE_QUERY_FIELDS = [
         FIELD_CHECKSUM, FIELD_CHECKSUM_TYPE, FIELD_DATA_NODE, FIELD_INDEX_NODE,
         FIELD_BBOX, FIELD_LAT, FIELD_LON, FIELD_RADIUS, FIELD_POLYGON,
         FIELD_START, FIELD_END,
-        FIELD_WGET_PATH, FIELD_WGET_EMPTYPATH
+        FIELD_WGET_PATH, FIELD_WGET_EMPTYPATH,
+        FIELD_PROJECT, FIELD_MIP_ERA
         ]
 
 # fields that should NOT be used as facets
@@ -129,6 +135,14 @@ UNSUPPORTED_FIELDS = [
     FIELD_RADIUS,
     FIELD_POLYGON
     ]
+
+# ID fields
+ID_FIELDS = [
+    FIELD_ID,
+    FIELD_DATASET_ID,
+    FIELD_MASTER_ID,
+    FIELD_INSTANCE_ID
+]
 
 
 def split_value(value):
@@ -189,6 +203,20 @@ def get_solr_shards_from_xml():
         for value in root:
             shard_list.append(value.text)
     return shard_list
+
+
+def get_allowed_projects_from_json():
+    """
+    Get allowed ESGF projects from the JSON file specified in the settings
+    as ESGF_ALLOWED_PROJECTS_JSON
+    """
+
+    allowed_projects_list = []
+    if os.path.isfile(settings.ESGF_ALLOWED_PROJECTS_JSON):
+        with open(settings.ESGF_ALLOWED_PROJECTS_JSON, 'r') as js:
+            data = json.load(js)
+            allowed_projects_list = data['allowed_projects']
+    return allowed_projects_list
 
 
 def get_facets_from_solr():

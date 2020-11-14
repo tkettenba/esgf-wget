@@ -37,6 +37,9 @@ ESGF_SOLR_URL = localhost/solr
 # Path to XML file containing Solr shards
 ESGF_SOLR_SHARDS_XML = /esg/config/esgf_shards_static.xml
 
+# Path to JSON file containing allowed projects to access for datasets
+ESGF_ALLOWED_PROJECTS_JSON = /esg/config/esgf_allowed_projects.json
+
 # Default limit on the number of files allowed in a wget script
 WGET_SCRIPT_FILE_DEFAULT_LIMIT = 1000
 
@@ -45,6 +48,32 @@ WGET_SCRIPT_FILE_MAX_LIMIT = 100000
 
 # Maximum length for facet values used in the wget directory structure
 WGET_MAX_DIR_LENGTH = 50
+```
+### ESGF_SOLR_SHARDS_XML
+A path to a XML file that contains a list of Solr shards used by the ESGF Solr database for distributed search.  Example below.
+```
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<shards>
+    <value>localhost:8983/solr</value>
+    <value>localhost:8985/solr</value>
+    <value>localhost:8987/solr</value>
+</shards>
+```
+
+### ESGF_ALLOWED_PROJECTS_JSON
+A path to a JSON file that contains a list of ESGF projects that are allowed to be used by this API.  Any project that is not listed will cause the API to reject the query.  Example below.
+```
+{
+    "allowed_projects": [
+        "CMIP6", 
+        "CMIP5", 
+        "CMIP3", 
+        "input4MIPs", 
+        "obs4MIPs", 
+        "CREATE-IP", 
+        "E3SM"
+    ]
+}
 ```
 
 Run the API using manage.py.
