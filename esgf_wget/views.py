@@ -163,8 +163,8 @@ def generate_wget_script(request):
 
     # Set file number limit within a set maximum number
     if url_params.get(LIMIT):
-        _limit = int(url_params.pop(LIMIT)[0])
-        file_limit = min(_limit, settings.WGET_SCRIPT_FILE_MAX_LIMIT)
+        file_limit = int(url_params.pop(LIMIT)[0])
+    file_limit = min(file_limit, settings.WGET_SCRIPT_FILE_MAX_LIMIT)
 
     # Set the starting index for the returned records from the query
     if url_params.get(OFFSET):
