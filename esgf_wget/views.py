@@ -209,13 +209,13 @@ def generate_wget_script(request):
                   '{project}, is not allowed to be accessed by this site. ' \
                   'Please redo your query with unrestricted data only, ' \
                   'and request {project} data from another site.'
-            projects_lower = [x.lower() for x in allowed_projects]
             # Check project parameter
             if param in [FIELD_PROJECT]:
                 for v in split_value_list:
-                    if v.lower() not in projects_lower:
+                    if v not in allowed_projects:
                         return HttpResponseBadRequest(msg.format(project=v))
             # Check ID parameters
+            projects_lower = [x.lower() for x in allowed_projects]
             if param in ID_FIELDS:
                 for v in split_value_list:
                     p = v.split('.')[0]
@@ -226,6 +226,15 @@ def generate_wget_script(request):
             fq = '{}:{}'.format(param, split_value_list[0])
         else:
             fq = '{}:({})'.format(param, ' || '.join(split_value_list))
+        file_query.append(fq)
+
+    # If the projects were not passed and the allowed projects list exists,
+    # then use the allowed projects as the project query
+    if not url_params.get(FIELD_PROJECT) and allowed_projects:
+        if len(allowed_projects) == 1:
+            fq = '{}:{}'.format(FIELD_PROJECT, allowed_projects[0])
+        else:
+            fq = '{}:({})'.format(FIELD_PROJECT, ' || '.join(allowed_projects))
         file_query.append(fq)
 
     # Get facets for the file name, URL, checksum
