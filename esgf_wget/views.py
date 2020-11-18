@@ -9,6 +9,7 @@ import urllib.request
 import urllib.parse
 import datetime
 import json
+import re
 
 from esgf_wget.query_utils import *
 
@@ -114,7 +115,9 @@ def generate_wget_script(request):
 
     # Set bounding box constraint
     if url_params.get(FIELD_BBOX):
-        (west, south, east, north) = url_params.pop(FIELD_BBOX)[0]
+        bbox_string = url_params.pop(FIELD_BBOX)[0]
+        bbox_search = re.search(r'^\[(.*?),(.*?),(.*?),(.*?)\]$', bbox_string)
+        (west, south, east, north) = bbox_search.group(1, 2, 3, 4)
         querys.append('{}:[{} TO *]'.format(FIELD_EAST_DEGREES, west))
         querys.append('{}:[{} TO *]'.format(FIELD_NORTH_DEGREES, south))
         querys.append('{}:[* TO {}]'.format(FIELD_WEST_DEGREES, east))
