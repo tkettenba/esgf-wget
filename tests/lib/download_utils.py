@@ -29,7 +29,7 @@ def compare_to_expected(expected_datafiles, downloaded_files):
         ret = FAILURE
     return (ret)
 
-def get_wget_bash(shards, wget_node, dataset_ids, temp_dir, limit=None):
+def get_wget_bash_PREV(shards, wget_node, dataset_ids, temp_dir, limit=None):
 
     print("xxx...get_wget_bash()...xxx")
     # url = "https://{n}/wget".format(n=wget_node)
@@ -48,6 +48,43 @@ def get_wget_bash(shards, wget_node, dataset_ids, temp_dir, limit=None):
     if limit:
         limit_param = " --data \"limit={l}\"".format(l=limit)
         params = params + limit_param
+
+    # print("xxx params: ", params)
+    cmd = "curl {url} {params} -o {dir}/wget.bash".format(params=params,
+                                                          url=url,
+                                                          dir=temp_dir)
+    
+    ret = run_cmd(cmd)
+    return ret
+
+
+def construct_wget_params(test_dict):
+    exclude_list = ["index_node", "do_download"]
+    params = ""
+    for key in test_dict:
+        if key in exclude_list:
+            continue
+        elif key == "shards":
+            shards_str = test_dict["shards"][0]
+            shards_param = " --data \"shards={s}\"".format(s=shards_str)
+            params = params + shards_param
+        elif key == "dataset_ids":
+            for id in test_dict["dataset_ids"]:
+                dataset_param = "dataset_id={d}".format(d=id)
+                params = params + " --data \"{ds_param}\"".format(ds_param=dataset_param)            
+        else:
+            params = params + " --data \"{k}={v}\"".format(k=key,
+                                                           v=test_dict[key])
+    return(params)
+        
+# def get_wget_bash(shards, wget_node, dataset_ids, temp_dir, limit=None):
+def get_wget_bash(wget_node, test_dict, temp_dir):
+
+    print("xxx...get_wget_bash()...xxx")
+    # url = "https://{n}/wget".format(n=wget_node)
+    url = "{n}/wget".format(n=wget_node)
+
+    params = construct_wget_params(test_dict)
 
     # print("xxx params: ", params)
     cmd = "curl {url} {params} -o {dir}/wget.bash".format(params=params,
@@ -92,4 +129,17 @@ def run_wget_bash(expected_datafiles, temp_dir, do_download):
                 would_have_downloaded_files.append(filename)
         ret = compare_to_expected(expected_datafiles, would_have_downloaded_files)
 
+    return(ret)
+
+def check_wget_response(temp_dir, expected_response):
+
+    print("xxx...check_wget_response...xxx")
+    with open("{d}/wget.bash".format(d=temp_dir)) as f:
+        lines = f.readlines()
+        if expected_response in lines[0]:
+            print("FOUND the expected response: {r}".format(r=expected_response))
+            ret = SUCCESS
+        else:
+            print("Did not find the expected response: {r}".format(r=expected_response))
+            ret = FAILURE
     return(ret)

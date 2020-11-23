@@ -11,21 +11,17 @@ sys.path.append(modules_dir)
 
 from Const import SUCCESS, FAILURE
 from search_utils import search_data_files
-from download_utils import get_wget_bash, run_wget_bash
+from download_utils import get_wget_bash, run_wget_bash, check_wget_response
 from common_utils import read_in_data
 
-@pytest.mark.parametrize("download_test", ["1_dataset_id_1_nc",
-                                           "1_dataset_id_multiple_ncs",
-                                           "2_dataset_id_multiple_nc",
-                                           "cmip5_1_dataset_id_multiple_ncs",
-                                           "cmip5_1_dataset_id_multiple_ncs_multiple_shards",
-                                           "cmip6_params1"])
+#
+# obs4MIPs is not listed in the allowed_projects of the deployment
+#
+@pytest.mark.parametrize("download_test", ["obs4MIPs_1_dataset_id_1_nc"])
 
-#@pytest.mark.parametrize("download_test", ["cmip6_params1"])
-#@pytest.mark.parametrize("download_test", ["2_dataset_id_multiple_nc"])
+def test_download_not_allowed(data, download_test):
 
-def test_download(data, download_test):
-
+    # index_node, shards, dataset_ids, do_download = read_in_data(download_test)
     test_dict = read_in_data(download_test)
     temp_dir = tempfile.mkdtemp()
     #
@@ -38,19 +34,20 @@ def test_download(data, download_test):
     # wget_node = "https://nimbus15.llnl.gov:8443"
     wget_node = os.environ["WGET_API_HOST_URL"]
     assert wget_node
-    
+
+    expected_response = "This query cannot be completed since the project, obs4MIPs, is not allowed to be accessed by this site."
     ret = get_wget_bash(wget_node, test_dict, temp_dir)
     assert ret == SUCCESS
-
-    ret = run_wget_bash(data_files, temp_dir, do_download=test_dict["do_download"])
-
-    # shutil.rmtree(temp_dir)
     
+    ret = check_wget_response(temp_dir, expected_response)
+    assert ret == SUCCESS
+    
+#    shutil.rmtree(temp_dir)  
     assert ret == SUCCESS
 
 # from the root of the repo
 # export WGET_API_HOST_URL=https://nimbus15.llnl.gov:8443
-# pytest --capture=tee-sys --data `pwd`/tests/test_data/test_data.json tests/tests/test_download.py
+# pytest --capture=tee-sys --data `pwd`/tests/test_data/test_data.json tests/tests/test_download_not_allowed.py
 
 
 
