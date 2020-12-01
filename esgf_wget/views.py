@@ -9,6 +9,7 @@ import urllib.request
 import urllib.parse
 import datetime
 import json
+import re
 
 from esgf_wget.query_utils import *
 
@@ -114,7 +115,9 @@ def generate_wget_script(request):
 
     # Set bounding box constraint
     if url_params.get(FIELD_BBOX):
-        (west, south, east, north) = url_params.pop(FIELD_BBOX)[0]
+        bbox_string = url_params.pop(FIELD_BBOX)[0]
+        bbox_search = re.search(r'^\[(.*?),(.*?),(.*?),(.*?)\]$', bbox_string)
+        (west, south, east, north) = bbox_search.group(1, 2, 3, 4)
         querys.append('{}:[{} TO *]'.format(FIELD_EAST_DEGREES, west))
         querys.append('{}:[{} TO *]'.format(FIELD_NORTH_DEGREES, south))
         querys.append('{}:[* TO {}]'.format(FIELD_WEST_DEGREES, east))
@@ -163,8 +166,8 @@ def generate_wget_script(request):
 
     # Set file number limit within a set maximum number
     if url_params.get(LIMIT):
-        _limit = int(url_params.pop(LIMIT)[0])
-        file_limit = min(_limit, settings.WGET_SCRIPT_FILE_MAX_LIMIT)
+        file_limit = int(url_params.pop(LIMIT)[0])
+    file_limit = min(file_limit, settings.WGET_SCRIPT_FILE_MAX_LIMIT)
 
     # Set the starting index for the returned records from the query
     if url_params.get(OFFSET):
@@ -209,13 +212,13 @@ def generate_wget_script(request):
                   '{project}, is not allowed to be accessed by this site. ' \
                   'Please redo your query with unrestricted data only, ' \
                   'and request {project} data from another site.'
-            projects_lower = [x.lower() for x in allowed_projects]
             # Check project parameter
             if param in [FIELD_PROJECT]:
                 for v in split_value_list:
-                    if v.lower() not in projects_lower:
+                    if v not in allowed_projects:
                         return HttpResponseBadRequest(msg.format(project=v))
             # Check ID parameters
+            projects_lower = [x.lower() for x in allowed_projects]
             if param in ID_FIELDS:
                 for v in split_value_list:
                     p = v.split('.')[0]
@@ -226,6 +229,15 @@ def generate_wget_script(request):
             fq = '{}:{}'.format(param, split_value_list[0])
         else:
             fq = '{}:({})'.format(param, ' || '.join(split_value_list))
+        file_query.append(fq)
+
+    # If the projects were not passed and the allowed projects list exists,
+    # then use the allowed projects as the project query
+    if not url_params.get(FIELD_PROJECT) and allowed_projects:
+        if len(allowed_projects) == 1:
+            fq = '{}:{}'.format(FIELD_PROJECT, allowed_projects[0])
+        else:
+            fq = '{}:({})'.format(FIELD_PROJECT, ' || '.join(allowed_projects))
         file_query.append(fq)
 
     # Get facets for the file name, URL, checksum
