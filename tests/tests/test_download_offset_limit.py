@@ -14,25 +14,8 @@ from search_utils import search_data_files
 from download_utils import get_wget_bash, run_wget_bash
 from common_utils import read_in_data
 
-def read_in_data_PREV(test_case):
-
-    data_file = os.environ["WGET_API_TEST_DATA"]
-    print("XXX reading data file: {d}".format(d=data_file))
-    with open(os.environ["WGET_API_TEST_DATA"]) as f:
-        test_data_dict = json.load(f)
-        test_case_dict = test_data_dict[test_case]
-        for k in test_case_dict:
-            print("XXX {key}: {val}".format(key=k, val=test_case_dict[k]))
-        return(test_case_dict["index_node"],
-               test_case_dict["shards"],
-               test_case_dict["dataset_ids"],
-	       test_case_dict["do_download"],
-               test_case_dict["offset"],
-               test_case_dict["limit"])
-    return(None)
-
 @pytest.mark.parametrize("download_offset_limit_test",
-                         ["1_dataset_id_multiple_ncs"])
+                         ["1_dataset_id_multiple_ncs_offset_1"])
 
         
 def test_download_offset_limit(data, download_offset_limit_test):
@@ -57,7 +40,10 @@ def test_download_offset_limit(data, download_offset_limit_test):
     ret = run_wget_bash(data_files[offset:(limit + offset if limit is not None else None)],
                         temp_dir, do_download=test_dict["do_download"])
 
-    shutil.rmtree(temp_dir)
+    ret = run_wget_bash(data_files,
+                        temp_dir, do_download=test_dict["do_download"])    
+
+    #shutil.rmtree(temp_dir)
     
     assert ret == SUCCESS
 
