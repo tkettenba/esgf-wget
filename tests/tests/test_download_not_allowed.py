@@ -21,7 +21,6 @@ from common_utils import read_in_data
 
 def test_download_not_allowed(data, download_test):
 
-    # index_node, shards, dataset_ids, do_download = read_in_data(download_test)
     test_dict = read_in_data(download_test)
     temp_dir = tempfile.mkdtemp()
     #
@@ -29,8 +28,6 @@ def test_download_not_allowed(data, download_test):
     #
     data_files = search_data_files(test_dict, temp_dir)
 
-    # REVISIT
-    # wget_node = "http://esgf-dev2.llnl.gov"
     # wget_node = "https://nimbus15.llnl.gov:8443"
     wget_node = os.environ["WGET_API_HOST_URL"]
     assert wget_node
@@ -47,7 +44,7 @@ def test_download_not_allowed(data, download_test):
 
 # from the root of the repo
 # export WGET_API_HOST_URL=https://nimbus15.llnl.gov:8443
-# pytest --capture=tee-sys --data `pwd`/tests/test_data/test_data.json tests/tests/test_download_not_allowed.py
+# pytest --capture=tee-sys --data `pwd`/tests/test_data/test_download.json tests/tests/test_download_not_allowed.py
 
 
 
