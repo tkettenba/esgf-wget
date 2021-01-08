@@ -97,6 +97,7 @@ def get_wget_bash(wget_node, test_dict, temp_dir):
 def run_wget_bash(expected_datafiles, temp_dir, do_download):
 
     print("xxx...download_data_files...xxx")
+    print("...expected_data_files:")
     for f in expected_datafiles:
         print("...f: {f}".format(f=f))
 

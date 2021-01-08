@@ -19,9 +19,11 @@ from common_utils import read_in_data
                                            "2_dataset_id_multiple_nc",
                                            "cmip5_1_dataset_id_multiple_ncs",
                                            "cmip5_1_dataset_id_multiple_ncs_multiple_shards",
-                                           "cmip6_params1",
-                                           "1_dataset_id_multiple_ncs_offset_0",
-                                           "1_dataset_id_multiple_ncs_offset_1"])
+#                                           "cmip6_params1",
+                                           "1_dataset_id_multiple_ncs_offset_0"])
+#                                           "1_dataset_id_multiple_ncs_offset_1"])
+
+#@pytest.mark.parametrize("download_test", ["cmip6_params1"])
 
 def test_download(data, download_test):
     '''
