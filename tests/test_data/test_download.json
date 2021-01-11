@@ -1,0 +1,68 @@
+{
+    "1_dataset_id_1_nc": {
+        "index_node": "esgf-node.llnl.gov",
+        "shards": ["esgf-node.llnl.gov/solr"],
+        "dataset_ids": ["CMIP6.C4MIP.E3SM-Project.E3SM-1-1.hist-bgc.r1i1p1f1.fx.areacella.gr.v20191212|aims3.llnl.gov"],
+        "do_download": true
+    },
+    "1_dataset_id_multiple_ncs": {
+        "index_node": "esgf-node.llnl.gov",
+        "shards": ["esgf-node.llnl.gov/solr"],
+        "dataset_ids": ["CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.clivi.gr.v20191029|aims3.llnl.gov"],
+        "do_download": false
+    },
+    "2_dataset_id_multiple_nc": {
+        "index_node": "esgf-node.llnl.gov",
+        "shards": ["esgf-node.llnl.gov/solr"],
+        "dataset_ids": ["CMIP6.C4MIP.E3SM-Project.E3SM-1-1.hist-bgc.r1i1p1f1.fx.areacella.gr.v20191212|aims3.llnl.gov",
+		        "CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.clivi.gr.v20191029|aims3.llnl.gov"],
+        "do_download": false
+    },
+    "cmip5_1_dataset_id_multiple_ncs": {
+        "index_node": "esgf-node.llnl.gov",
+        "shards": ["esgf-node.llnl.gov/solr"],
+        "dataset_ids": ["cmip5.output1.INM.inmcm4.sstClim.fx.atmos.fx.r0i0p0.v20110323|aims3.llnl.gov"],
+        "do_download": true
+    },
+    "cmip5_1_dataset_id_multiple_ncs_multiple_shards": {
+        "index_node": "esgf-node.llnl.gov",
+        "shards": ["localhost:8983/solr,localhost:8985/solr,localhost:8987/solr,localhost:8988/solr,localhost:8990/solr,localhost:8993/solr,localhost:8994/solr,localhost:8995/solr,localhost:8996/solr,localhost:8997/solr"],
+        "dataset_ids": ["cmip5.output1.INM.inmcm4.sstClim.fx.atmos.fx.r0i0p0.v20110323|aims3.llnl.gov"],
+        "do_download": true
+    },
+    "obs4MIPs_1_dataset_id_1_nc": {
+        "index_node": "esgf-node.llnl.gov",
+        "shards": ["esgf-node.llnl.gov/solr"],
+        "dataset_ids": ["obs4MIPs.NASA-JPL.AIRS-1-0.mon.hus.gn.v20110608|aims3.llnl.gov"],
+        "do_download": true
+    },
+    "cmip6_params1": {
+        "index_node": "esgf-node.llnl.gov",
+	"data_node": "esg-dn2.nsc.liu.se",
+	"activity_id": "AerChemMIP",
+	"institution_id": "EC-Earth-Consortium",
+	"source_id": "EC-Earth3-AerChem",
+	"variable": "rlutaf",
+	"replica": "false",
+	"latest": "true",
+	"do_download": false
+    },
+    "1_dataset_id_multiple_ncs_offset_0": {
+        "index_node": "esgf-node.llnl.gov",
+        "shards": ["esgf-node.llnl.gov/solr"],
+        "dataset_ids": ["CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.clivi.gr.v20191029|aims3.llnl.gov"],
+        "do_download": false,
+	"offset": 0,
+	"limit": 8
+    },
+    "1_dataset_id_multiple_ncs_offset_1": {
+        "index_node": "esgf-node.llnl.gov",
+        "shards": ["esgf-node.llnl.gov/solr"],
+        "dataset_ids": ["CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.clivi.gr.v20191029|aims3.llnl.gov"],
+        "do_download": false,
+	"offset": 2,
+	"limit": 5
+    }
+
+}
+
