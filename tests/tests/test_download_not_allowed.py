@@ -39,7 +39,7 @@ def test_download_not_allowed(data, download_test):
     ret = check_wget_response(temp_dir, expected_response)
     assert ret == SUCCESS
     
-#    shutil.rmtree(temp_dir)  
+    shutil.rmtree(temp_dir)  
     assert ret == SUCCESS
 
 # from the root of the repo
