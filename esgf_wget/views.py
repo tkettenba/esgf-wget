@@ -281,6 +281,7 @@ def generate_wget_script(request):
     with urllib.request.urlopen(req) as response:
         results = json.loads(response.read().decode())
 
+    files_were_skipped = False
     num_files = results['response']['numFound']
     for file_info in results['response']['docs']:
         filename = file_info['title']
@@ -315,15 +316,17 @@ def generate_wget_script(request):
                                       checksum=checksum)
                     file_list[file_path] = file_entry
                     break
+        else:
+            files_were_skipped = True
 
     # Limit the number of files to the maximum
     warning_message = None
     if num_files == 0:
         return HttpResponse('No files found for datasets.')
-    elif num_files > file_limit:
+    elif num_files > len(file_list):
         warning_message = 'Warning! The total number of files was {} ' \
                           'but this script will only process {}.' \
-                          .format(num_files, file_limit)
+                          .format(num_files, len(file_list))
 
     # Warning message about files that were skipped
     # to prevent overwriting similarly-named files.
@@ -332,7 +335,7 @@ def generate_wget_script(request):
                'the previous downloaded one they were skipped.\n' \
                'Please use the parameter \'download_structure\' ' \
                'to set up unique directories for them.'
-    if min(num_files, file_limit) > len(file_list):
+    if files_were_skipped:
         if warning_message:
             warning_message = '{}\n{}'.format(warning_message, skip_msg)
         else:
