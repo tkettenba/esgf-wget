@@ -29,35 +29,6 @@ def compare_to_expected(expected_datafiles, downloaded_files):
         ret = FAILURE
     return (ret)
 
-def get_wget_bash_PREV(shards, wget_node, dataset_ids, temp_dir, limit=None):
-
-    print("xxx...get_wget_bash()...xxx")
-    # url = "https://{n}/wget".format(n=wget_node)
-    url = "{n}/wget".format(n=wget_node)
-
-    params = ""
-    for id in dataset_ids:
-        dataset_param = "dataset_id={d}".format(d=id)
-        params = params + " --data \"{ds_param}\"".format(ds_param=dataset_param)
-
-    if shards:
-        shards_str = ",".join(shards)
-        shards_param = " --data \"shards={s}\"".format(s=shards_str)
-        params = params + shards_param
-
-    if limit:
-        limit_param = " --data \"limit={l}\"".format(l=limit)
-        params = params + limit_param
-
-    # print("xxx params: ", params)
-    cmd = "curl {url} {params} -o {dir}/wget.bash".format(params=params,
-                                                          url=url,
-                                                          dir=temp_dir)
-    
-    ret = run_cmd(cmd)
-    return ret
-
-
 def construct_wget_params(test_dict):
     exclude_list = ["index_node", "do_download"]
     params = ""
@@ -135,8 +106,10 @@ def run_wget_bash(expected_datafiles, temp_dir, do_download):
 def check_wget_response(temp_dir, expected_response):
 
     print("xxx...check_wget_response...xxx")
+    print("xxx...expected_response: {}".format(expected_response))
     with open("{d}/wget.bash".format(d=temp_dir)) as f:
         lines = f.readlines()
+        print("XXX lines[0]: {}".format(lines[0]))
         if expected_response in lines[0]:
             print("FOUND the expected response: {r}".format(r=expected_response))
             ret = SUCCESS
