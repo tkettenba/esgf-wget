@@ -19,11 +19,9 @@ from common_utils import read_in_data
                                            "2_dataset_id_multiple_nc",
                                            "cmip5_1_dataset_id_multiple_ncs",
                                            "cmip5_1_dataset_id_multiple_ncs_multiple_shards",
-#                                           "cmip6_params1",
-                                           "1_dataset_id_multiple_ncs_offset_0"])
-#                                           "1_dataset_id_multiple_ncs_offset_1"])
-
-#@pytest.mark.parametrize("download_test", ["cmip6_params1"])
+                                           "cmip6_params1",
+                                           "1_dataset_id_multiple_ncs_offset_0",
+                                           "1_dataset_id_multiple_ncs_offset_1"])
 
 def test_download(data, download_test):
     '''
@@ -62,39 +60,6 @@ def test_download(data, download_test):
     
     assert ret == SUCCESS
 
-#
-# Before running the test suite, deploy wgetApi. 
-# Below is an example of wgetApi settings.
-#
-#    settings:
-#      debug: False
-#      allowedHosts: "*"
-#      esgfSolrUrl: https://esgf-node.llnl.gov/solr
-#      esgfSolrShardsXml: /esg/esgf_wget/esgf_solr_shards.xml
-#      wgetScriptFileDefaultLimit: 10000
-#      wgetScriptFileMaxLimit: 50000
-#      dataUploadMaxNumberFields: 10240
-#      wgetMaxDirLength: 50
-#      # Allowed projects for wget api
-#      allowed_projects:
-#        - '"CMIP6"'
-#        - '"CMIP5"'
-#        - '"CMIP3"'
-#        - '"input4MIPs"'
-#        - '"CREATE-IP"'
-#        - '"E3SM"'
-#      shards:
-#        - localhost:8983/solr
-#        - localhost:8985/solr
-#        - localhost:8987/solr
-#        - localhost:8988/solr
-#        - localhost:8990/solr
-#        - localhost:8993/solr
-#        - localhost:8994/solr
-#        - localhost:8995/solr
-#        - localhost:8996/solr
-#        - localhost:8997/solr
-   
 #
 # from the root of the repo
 # export WGET_API_HOST_URL=https://nimbus15.llnl.gov:8443
