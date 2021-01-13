@@ -84,27 +84,45 @@ python manage.py runserver
 
 esgf-wget can use either GET or POST requests for obtaining wget scripts.  Queries are accepted from the `/wget` path.
 
-Select a dataset to collect files from using the parameter `dataset_id`.
+### Facet queries
+Search for files based on facet values in the ESGF Solr database.
+
+Select files from datasets that have the variable `ta`.
 ```
-localhost:8000/wget?dataset_id=CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.cl.gr.v20191029|aims3.llnl.gov
+http://localhost:8000/wget?variable=ta
+```
+Select files from a specific dataset ID.
+```
+http://localhost:8000/wget?dataset_id=CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.cl.gr.v20191029|aims3.llnl.gov
+```
+Multiple values for different facets can be queried where the values are combined with a logical AND.  The query below will select files from datasets with the match `experiment=decadal2000` AND `variable=hus`.
+```
+http://localhost:8000/wget?experiment=decadal2000&variable=hus
+```
+Multiple values of the same facet can be queried either as multiple parameters of the same facet, or with a comma-separated list of values for a facet. The values are combined with a logical OR.  The queries below are functionally identical and will select files from datasets with the match `variable=hus` OR `variable=ta`.
+```
+http://localhost:8000/wget?variable=hus&variable=ta
+http://localhost:8000/wget?variable=hus,ta
+```
+Facet values can be negated using the `!=` operator.  The query below will select files from datasets where `model` is not `CCSM`.
+```
+http://localhost:8000/wget?model!=CCSM
 ```
 
-Multiple datasets can be queried.
-```
-localhost:8000/wget?dataset_id=CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.cl.gr.v20191029|aims3.llnl.gov&dataset_id=CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.cli.gr.v20191029|aims3.llnl.gov&dataset_id=CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.clivi.gr.v20191029|aims3.llnl.gov
-```
-
+### Distributed Search
 The parameter `distrib` is used to enable/disable distributed search, where all provided Solr shards are used for the dataset search.  If `distrib=false`, then only a local search of Solr will be performed.  It is set to true by default.
 ```
-localhost:8000/wget?distrib=false&dataset_id=...
+http://localhost:8000/wget?distrib=false&dataset_id=CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.cl.gr.v20191029|aims3.llnl.gov
 ```
 
+### Shard Queries
 The parameter `shards` is used to pass specific Solr shards for use by the dataset search.  Shards are provided as a string of URLs delimited by commas.  If no shards are provided, then the API will use the shards stored in the file `ESGF_SOLR_SHARDS_XML` in local_settings.py.
 ```
-localhost:8000/wget?shards=localhost:8993/solr,localhost:8994/solr,localhost:8995/solr&dataset_id=...
+http://localhost:8000/wget?shards=esgf-node.llnl.gov/solr&dataset_id=CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.cl.gr.v20191029|aims3.llnl.gov
 ```
 
+### File number limit
 The parameter `limit` helps control the file limit of the dataset search.  By default, the file limit will come from the variable `WGET_SCRIPT_FILE_DEFAULT_LIMIT` in local_settings.py.  The file limit is ultimately limited by the variable `WGET_SCRIPT_FILE_MAX_LIMIT` in local_settings.py.
 ```
-localhost:8000/wget?limit=20000&dataset_id=...
+http://localhost:8000/wget?limit=20000&project=CMIP5
 ```
