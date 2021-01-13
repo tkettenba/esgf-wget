@@ -84,7 +84,7 @@ python manage.py runserver
 
 esgf-wget can use either GET or POST requests for obtaining wget scripts.  Queries are accepted from the `/wget` path.
 
-### Facet queries
+### Facet Search
 Search for files based on facet values in the ESGF Solr database.
 
 Select files from datasets that have the variable `ta`.
@@ -109,13 +109,32 @@ Facet values can be negated using the `!=` operator.  The query below will selec
 http://localhost:8000/wget?model!=CCSM
 ```
 
+### Free Text Queries
+The parameter `query` can be used for finding any matches for a text value in all metadata fields.  The query below will return files for datasets that have the term "humidity" in any of their metadata.  The query string must be URL-encoded.
+```
+http://localhost:8000/wget?query=humidity
+```
+`query` can also be used to pass query strings in the Apache Lucene query syntax.  The query below will return files for datasets that have dataset IDs that begin with the pattern `obs4MIPs.NASA-JPL.AIRS.`.  The query string must be URL-encoded.
+```
+http://localhost:8000/wget?query=dataset_id:obs4MIPs.NASA-JPL.AIRS.*
+```
+
+### Temporal Search
+
+### Spatial Search
+
+### Dataset Version
+
+### Latest Datasets
+
+
 ### Distributed Search
 The parameter `distrib` is used to enable/disable distributed search, where all provided Solr shards are used for the dataset search.  If `distrib=false`, then only a local search of Solr will be performed.  It is set to true by default.
 ```
 http://localhost:8000/wget?distrib=false&dataset_id=CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.cl.gr.v20191029|aims3.llnl.gov
 ```
 
-### Shard Queries
+### Shard Search
 The parameter `shards` is used to pass specific Solr shards for use by the dataset search.  Shards are provided as a string of URLs delimited by commas.  If no shards are provided, then the API will use the shards stored in the file `ESGF_SOLR_SHARDS_XML` in local_settings.py.
 ```
 http://localhost:8000/wget?shards=esgf-node.llnl.gov/solr&dataset_id=CMIP6.CMIP.E3SM-Project.E3SM-1-1.piControl.r1i1p1f1.Amon.cl.gr.v20191029|aims3.llnl.gov
