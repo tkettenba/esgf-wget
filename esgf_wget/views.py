@@ -275,14 +275,26 @@ def generate_wget_script(request):
             query_params.update(dict(shards=shards))
 
     # Fetch files for the query
-    file_list = {}
     query_encoded = urllib.parse.urlencode(query_params, doseq=True).encode()
     req = urllib.request.Request(query_url, query_encoded)
     with urllib.request.urlopen(req) as response:
         results = json.loads(response.read().decode())
 
+    # Warning message about the number of files retrieved
+    # being smaller than the total number found for the query
+    warning_message = None
+    num_files_found = results['response']['numFound']
+    num_files_listed = len(results['response']['docs'])
+    if num_files_found == 0:
+        return HttpResponse('No files found for datasets.')
+    elif num_files_found > num_files_listed:
+        warning_message = 'Warning! The total number of files was {} ' \
+                          'but this script will only process {}.' \
+                          .format(num_files_found, num_files_listed)
+
+    # Process files from query
+    file_list = {}
     files_were_skipped = False
-    num_files = results['response']['numFound']
     for file_info in results['response']['docs']:
         filename = file_info['title']
         checksum_type = file_info['checksum_type'][0]
@@ -318,15 +330,6 @@ def generate_wget_script(request):
                     break
         else:
             files_were_skipped = True
-
-    # Limit the number of files to the maximum
-    warning_message = None
-    if num_files == 0:
-        return HttpResponse('No files found for datasets.')
-    elif num_files > len(file_list):
-        warning_message = 'Warning! The total number of files was {} ' \
-                          'but this script will only process {}.' \
-                          .format(num_files, len(file_list))
 
     # Warning message about files that were skipped
     # to prevent overwriting similarly-named files.
