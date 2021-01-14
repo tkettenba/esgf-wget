@@ -120,6 +120,7 @@ http://localhost:8000/wget?query=dataset_id:obs4MIPs.NASA-JPL.AIRS.*
 ```
 
 ### Temporal Search
+Currently not working.  See issue [#36](https://github.com/ESGF/esgf-wget/issues/36)
 
 ### Spatial Search
 
