@@ -123,6 +123,10 @@ http://localhost:8000/wget?query=dataset_id:obs4MIPs.NASA-JPL.AIRS.*
 Currently not working.  See issue [#36](https://github.com/ESGF/esgf-wget/issues/36)
 
 ### Spatial Search
+The parameter `bbox` is used for searching for data that has geospatial coverage that overlaps a bounding box defined as `[west, south, east, north]`, which represents ranges of latitude and longitude in degrees.  The query below will return files for datasets that overlap with a geospatial bounding box of -10 to 10 degrees longitude and -10 to 10 degrees latitude.  The query string must be URL-encoded.
+```
+http://localhost:8000/wget?bbox=%5B-10,-10,+10,+10%5D
+```
 
 ### Dataset Version
 
