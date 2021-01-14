@@ -157,3 +157,9 @@ The parameter `limit` helps control the file limit of the dataset search.  By de
 ```
 http://localhost:8000/wget?limit=20000&project=CMIP5
 ```
+
+### File query result offset
+The parameter `offset` is used to control the start index for the list of results from a file query.  By default, the offset is set to 0.  The query below will return the next 100 CMIP6 files after the first 100 files.
+```
+http://localhost:8000/wget?project=CMIP6&limit=100&offset=100
+```
