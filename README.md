@@ -129,9 +129,16 @@ http://localhost:8000/wget?bbox=%5B-10,-10,+10,+10%5D
 ```
 
 ### Dataset Version
+The parameter `version` is used for finding datasets of a specific version in the date format of YYYYMMDD.
+```
+http://localhost:8000/wget?version=20201223
+```
 
 ### Latest Datasets
-
+The parameter `latest` is used for finding datasets that are currently the latest version in the database when set to `latest=true`.  It can be used to find datasets that have been superseded by newer versions by setting `latest=false`.  If not set, the wget API will find all versions of datasets.
+```
+http://localhost:8000/wget?latest=true
+```
 
 ### Distributed Search
 The parameter `distrib` is used to enable/disable distributed search, where all provided Solr shards are used for the dataset search.  If `distrib=false`, then only a local search of Solr will be performed.  It is set to true by default.
