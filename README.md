@@ -163,3 +163,9 @@ The parameter `offset` is used to control the start index for the list of result
 ```
 http://localhost:8000/wget?project=CMIP6&limit=100&offset=100
 ```
+
+### Simplified script
+The parameter `simple` is used to choose whether or not the wget API will produce a simpler version of the download script.  By default, the API will produce a script filled with logic for accepting command line arguments, determining if files have already been downloaded by looking at a cache file, and matching the checksums of downloaded files with those in the script.  By setting `simple=true`, the API will generate a simpler bash script that only has a list of file URLs that will be used with wget.
+```
+http://localhost:8000/wget?project=CMIP6&limit=100&simple=true
+```
