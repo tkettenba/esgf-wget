@@ -1,4 +1,3 @@
-
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -13,15 +12,60 @@ import re
 
 from esgf_wget.query_utils import *
 
+DOWNLOAD_SCRIPT = "download.py"
+
+
+def generateGlobusDownloadScript(download_map):
+    print("Generating script for downloading files: ")
+    print(download_map)
+
+    # read script 'download.py' located in same directory as this module
+    scriptFile = os.path.join(os.path.dirname(__file__), DOWNLOAD_SCRIPT)
+    with open(scriptFile, 'r') as f:
+        script = f.read().strip()
+    script = script.replace('{}##GENDPOINTDICT##', str(download_map))
+
+    return script
+
 
 def home(request):
     return HttpResponse('esgf-wget')
 
 
+def generate_globus_script(request):
+    # create download map
+    download_map = {}
+    file_results = get_files(request)["files"]
+    for doc in file_results:
+        access = {}
+        for url in doc['url']:
+            parts = url.split('|')
+            access[parts[2].lower()] = parts[0]
+        if 'globus' in access:
+            m = re.match('globus:([^/]*)(.*)', access['globus'])
+            if m:
+                gendpoint_name = m.group(1)
+                path = m.group(2)
+                if not gendpoint_name in download_map:
+                    download_map[gendpoint_name] = []  # insert empty list of paths
+                download_map[gendpoint_name].append(path)
+        else:
+            print('The file is not accessible through Globus')
+
+    # return python script
+    content = generateGlobusDownloadScript(download_map)
+    response = HttpResponse(content)
+    now = datetime.datetime.now()
+    scriptName = "globus_download_%s.py" % now.strftime("%Y%m%d_%H%M%S")
+    response['Content-Type'] = "application/x-python"
+    response['Content-Disposition'] = 'attachment; filename=%s' % scriptName
+    response['Content-Length'] = len(content)
+    return response
+
+
 @require_http_methods(['GET', 'POST'])
 @csrf_exempt
-def generate_wget_script(request):
-
+def get_files(request):
     query_url = settings.ESGF_SOLR_URL + '/files/select'
     file_limit = settings.WGET_SCRIPT_FILE_DEFAULT_LIMIT
     file_offset = 0
@@ -282,7 +326,20 @@ def generate_wget_script(request):
         results = json.loads(response.read().decode())
 
     num_files = results['response']['numFound']
-    for file_info in results['response']['docs']:
+    values = {"files": results["response"]["docs"], "wget_info": [wget_path_facets, wget_empty_path],
+              "file_info": [file_list, num_files, file_limit]}
+    return values
+
+
+def generate_wget_script(request):
+    values = get_files(request)
+    file_results = values["files"]
+    wget_path_facets = values["wget_info"][0]
+    wget_empty_path = values["wget_info"][1]
+    file_list = values["file_info"][0]
+    num_files = values["file_info"][1]
+    file_limit = values["file_info"][2]
+    for file_info in file_results:
         filename = file_info['title']
         checksum_type = file_info['checksum_type'][0]
         checksum = file_info['checksum'][0]
@@ -323,7 +380,7 @@ def generate_wget_script(request):
     elif num_files > file_limit:
         warning_message = 'Warning! The total number of files was {} ' \
                           'but this script will only process {}.' \
-                          .format(num_files, file_limit)
+            .format(num_files, file_limit)
 
     # Warning message about files that were skipped
     # to prevent overwriting similarly-named files.
