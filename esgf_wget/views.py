@@ -9,10 +9,27 @@ import urllib.parse
 import datetime
 import json
 import re
+import requests
 
 from esgf_wget.query_utils import *
 
 DOWNLOAD_SCRIPT = "download.py"
+DOWNLOAD_LIMIT = 10000
+
+def getJson(url):
+    '''Retrieves and parses a JSON document at some URL.'''
+
+    try:
+        opener = urllib.request.build_opener()
+        request = urllib.request.Request(url)
+        response = opener.open(request, timeout=60)
+        jdoc = response.read()
+        return json.loads(jdoc)
+
+    except Exception as e:
+        print(e)
+        print('Error retrieving URL=%s' % url)
+        return None
 
 
 def generateGlobusDownloadScript(download_map):
@@ -35,24 +52,63 @@ def home(request):
 def generate_globus_script(request):
     # create download map
     download_map = {}
-    file_results = get_files(request)["files"]
-    for doc in file_results:
-        access = {}
-        for url in doc['url']:
-            parts = url.split('|')
-            access[parts[2].lower()] = parts[0]
-        if 'globus' in access:
-            m = re.match('globus:([^/]*)(.*)', access['globus'])
-            if m:
-                gendpoint_name = m.group(1)
-                path = m.group(2)
-                if not gendpoint_name in download_map:
-                    download_map[gendpoint_name] = []  # insert empty list of paths
-                download_map[gendpoint_name].append(path)
-        else:
-            print('The file is not accessible through Globus')
+    index_node = "esgf-node.llnl.gov"
+    # optional query filter
+    # maximum number of files to query for, if specified
+    if request.method == 'POST':
+        url_params = request.POST.copy()
+    elif request.method == 'GET':
+        url_params = request.GET.copy()
+    else:
+        return HttpResponseBadRequest('Request method must be POST or GET.')
+    # map of (data_node, list of GridFTP URLs to download)
+
+    # loop over requested datasets
+    # query each index_node for all files belonging to that dataset
+    params = [('type', "File"), ('fields', 'url'), ("format", "application/solr+json")]
+    skips = ['type', 'fields', 'format', 'distrib']
+    shard = None
+
+    for param in url_params.keys():
+        if 'shard' in param:
+            shard = url_params[param]
+        elif 'index_node' in param:
+            index_node = url_params[param]
+        elif param not in skips:
+            params.append((param, url_params[param]))
+
+    # optional shard
+    if shard is not None and len(shard.strip()) > 0:
+        params.append(('shards', shard))  # '&shards=localhost:8982/solr'
+    else:
+        params.append(("distrib", "false"))
+
+    url = "http://" + index_node + "/esg-search/search?" + urllib.parse.urlencode(params)
+    print('Searching for files at URL: %s' % url)
+    jobj = getJson(url)
+
+    # parse response for GridFTP URls
+    if jobj is not None:
+        for doc in jobj["response"]["docs"]:
+            access = {}
+            for url in doc['url']:
+                parts = url.split('|')
+                access[parts[2].lower()] = parts[0]
+                print(access)
+            if 'globus' in access:
+                m = re.match('globus:([^/]*)(.*)', access['globus'])
+                if m:
+                    gendpoint_name = m.group(1)
+                    path = m.group(2)
+                    if not gendpoint_name in download_map:
+                        download_map[gendpoint_name] = []  # insert empty list of paths
+                    download_map[gendpoint_name].append(path)
+            else:
+                print('The file is not accessible through Globus')
 
     # return python script
+    if len(download_map) == 0:
+        return HttpResponse("No files in your query are accessible through globus.")
     content = generateGlobusDownloadScript(download_map)
     response = HttpResponse(content)
     now = datetime.datetime.now()
@@ -97,12 +153,14 @@ def get_files(request):
         url_params.update(dict(limit=1, distrib='false'))
 
     # Catch invalid parameters
+    first = True
     for param in url_params.keys():
         if param[-1] == '!':
             param = param[:-1]
+        first = False
         if param not in KEYWORDS \
                 and param not in CORE_QUERY_FIELDS \
-                and param not in solr_facets:
+                and param not in solr_facets and not quick:
             msg = 'Invalid HTTP query parameter=%s' % param
             return HttpResponseBadRequest(msg)
 
