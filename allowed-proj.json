@@ -1,0 +1,9 @@
+{
+    "allowed_projects": [
+        "CMIP6", 
+        "CMIP5", 
+        "input4MIPs", 
+        "CREATE-IP", 
+        "E3SM"
+    ]
+}
