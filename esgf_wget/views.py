@@ -130,7 +130,6 @@ def get_files(request):
     requested_shards = []
     wget_path_facets = []
     wget_empty_path = ''
-    script_template_file = 'wget-template.sh'
 
     xml_shards = get_solr_shards_from_xml()
     allowed_projects = get_allowed_projects_from_json()
@@ -398,28 +397,30 @@ def get_files(request):
     # being smaller than the total number found for the query
     warning_message = None
     num_files_found = results['response']['numFound']
-    num_files_listed = len(results['response']['docs'])
-    if num_files_found == 0:
-        return HttpResponse('No files found for datasets.')
-    elif num_files_found > num_files_listed:
-        warning_message = 'Warning! The total number of files was {} ' \
-                          'but this script will only process {}.' \
-                          .format(num_files_found, num_files_listed)
 
-    values = {"files": results["response"]["docs"], "wget_info": [wget_path_facets, wget_empty_path],
+    values = {"files": results["response"]["docs"], "wget_info": [wget_path_facets, wget_empty_path, url_params_list],
               "file_info": [num_files_found, file_limit]}
     return values
 
 
 def generate_wget_script(request):
+    script_template_file = 'wget-template.sh'
     values = get_files(request)
     file_results = values["files"]
     wget_path_facets = values["wget_info"][0]
     wget_empty_path = values["wget_info"][1]
-    num_files = values["file_info"][0]
+    url_params_list = values["wget_info"][2]
+    num_files_found = values["file_info"][0]
     file_limit = values["file_info"][1]
     file_list = {}
     files_were_skipped = False
+    num_files_listed = len(file_results)
+    if num_files_found == 0:
+        return HttpResponse('No files found for datasets.')
+    elif num_files_found > num_files_listed:
+        warning_message = 'Warning! The total number of files was {} ' \
+                          'but this script will only process {}.' \
+            .format(num_files_found, num_files_listed)
     for file_info in file_results:
 
         filename = file_info['title']
