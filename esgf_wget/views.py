@@ -205,6 +205,18 @@ def generate_wget_script(request):
             for sv in split_value(v):
                 split_value_list.append(sv)
 
+        # If dataset_id values were passed
+        # then check if they follow the expected pattern
+        # (i.e. <facet1>.<facet2>...<facetn>.v<version>|<data_node>)
+        if param == FIELD_DATASET_ID:
+            id_pat = r'^[-\w]+(\.[-\w]+)*\.v\d{8}\|[-\w]+(\.[-\w]+)*$'
+            id_regex = re.compile(id_pat)
+            msg = 'The dataset_id, {id}, does not follow the format of ' \
+                  '<facet1>.<facet2>...<facetn>.v<version>|<data_node>'
+            for v in split_value_list:
+                if not id_regex.match(v):
+                    return HttpResponseBadRequest(msg.format(id=v))
+
         # If the list of allowed projects is not empty,
         # then check if the query is accessing projects not in the list
         if allowed_projects:
@@ -275,13 +287,26 @@ def generate_wget_script(request):
             query_params.update(dict(shards=shards))
 
     # Fetch files for the query
-    file_list = {}
     query_encoded = urllib.parse.urlencode(query_params, doseq=True).encode()
     req = urllib.request.Request(query_url, query_encoded)
     with urllib.request.urlopen(req) as response:
         results = json.loads(response.read().decode())
 
-    num_files = results['response']['numFound']
+    # Warning message about the number of files retrieved
+    # being smaller than the total number found for the query
+    warning_message = None
+    num_files_found = results['response']['numFound']
+    num_files_listed = len(results['response']['docs'])
+    if num_files_found == 0:
+        return HttpResponse('No files found for datasets.')
+    elif num_files_found > num_files_listed:
+        warning_message = 'Warning! The total number of files was {} ' \
+                          'but this script will only process {}.' \
+                          .format(num_files_found, num_files_listed)
+
+    # Process files from query
+    file_list = {}
+    files_were_skipped = False
     for file_info in results['response']['docs']:
         filename = file_info['title']
         checksum_type = file_info['checksum_type'][0]
@@ -315,15 +340,8 @@ def generate_wget_script(request):
                                       checksum=checksum)
                     file_list[file_path] = file_entry
                     break
-
-    # Limit the number of files to the maximum
-    warning_message = None
-    if num_files == 0:
-        return HttpResponse('No files found for datasets.')
-    elif num_files > file_limit:
-        warning_message = 'Warning! The total number of files was {} ' \
-                          'but this script will only process {}.' \
-                          .format(num_files, file_limit)
+        else:
+            files_were_skipped = True
 
     # Warning message about files that were skipped
     # to prevent overwriting similarly-named files.
@@ -332,7 +350,7 @@ def generate_wget_script(request):
                'the previous downloaded one they were skipped.\n' \
                'Please use the parameter \'download_structure\' ' \
                'to set up unique directories for them.'
-    if min(num_files, file_limit) > len(file_list):
+    if files_were_skipped:
         if warning_message:
             warning_message = '{}\n{}'.format(warning_message, skip_msg)
         else:
