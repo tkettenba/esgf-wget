@@ -130,7 +130,6 @@ def get_files(request):
     requested_shards = []
     wget_path_facets = []
     wget_empty_path = ''
-    script_template_file = 'wget-template.sh'
 
     xml_shards = get_solr_shards_from_xml()
     allowed_projects = get_allowed_projects_from_json()
@@ -307,6 +306,18 @@ def get_files(request):
             for sv in split_value(v):
                 split_value_list.append(sv)
 
+        # If dataset_id values were passed
+        # then check if they follow the expected pattern
+        # (i.e. <facet1>.<facet2>...<facetn>.v<version>|<data_node>)
+        if param == FIELD_DATASET_ID:
+            id_pat = r'^[-\w]+(\.[-\w]+)*\.v\d{8}\|[-\w]+(\.[-\w]+)*$'
+            id_regex = re.compile(id_pat)
+            msg = 'The dataset_id, {id}, does not follow the format of ' \
+                  '<facet1>.<facet2>...<facetn>.v<version>|<data_node>'
+            for v in split_value_list:
+                if not id_regex.match(v):
+                    return HttpResponseBadRequest(msg.format(id=v))
+
         # If the list of allowed projects is not empty,
         # then check if the query is accessing projects not in the list
         if allowed_projects:
@@ -377,27 +388,41 @@ def get_files(request):
             query_params.update(dict(shards=shards))
 
     # Fetch files for the query
-    file_list = {}
     query_encoded = urllib.parse.urlencode(query_params, doseq=True).encode()
     req = urllib.request.Request(query_url, query_encoded)
     with urllib.request.urlopen(req) as response:
         results = json.loads(response.read().decode())
 
-    num_files = results['response']['numFound']
-    values = {"files": results["response"]["docs"], "wget_info": [wget_path_facets, wget_empty_path],
-              "file_info": [file_list, num_files, file_limit]}
+    # Warning message about the number of files retrieved
+    # being smaller than the total number found for the query
+    warning_message = None
+    num_files_found = results['response']['numFound']
+
+    values = {"files": results["response"]["docs"], "wget_info": [wget_path_facets, wget_empty_path, url_params_list],
+              "file_info": [num_files_found, file_limit]}
     return values
 
 
 def generate_wget_script(request):
+    script_template_file = 'wget-template.sh'
     values = get_files(request)
     file_results = values["files"]
     wget_path_facets = values["wget_info"][0]
     wget_empty_path = values["wget_info"][1]
-    file_list = values["file_info"][0]
-    num_files = values["file_info"][1]
-    file_limit = values["file_info"][2]
+    url_params_list = values["wget_info"][2]
+    num_files_found = values["file_info"][0]
+    file_limit = values["file_info"][1]
+    file_list = {}
+    files_were_skipped = False
+    num_files_listed = len(file_results)
+    if num_files_found == 0:
+        return HttpResponse('No files found for datasets.')
+    elif num_files_found > num_files_listed:
+        warning_message = 'Warning! The total number of files was {} ' \
+                          'but this script will only process {}.' \
+            .format(num_files_found, num_files_listed)
     for file_info in file_results:
+
         filename = file_info['title']
         checksum_type = file_info['checksum_type'][0]
         checksum = file_info['checksum'][0]
@@ -430,15 +455,9 @@ def generate_wget_script(request):
                                       checksum=checksum)
                     file_list[file_path] = file_entry
                     break
+        else:
+            files_were_skipped = True
 
-    # Limit the number of files to the maximum
-    warning_message = None
-    if num_files == 0:
-        return HttpResponse('No files found for datasets.')
-    elif num_files > file_limit:
-        warning_message = 'Warning! The total number of files was {} ' \
-                          'but this script will only process {}.' \
-            .format(num_files, file_limit)
 
     # Warning message about files that were skipped
     # to prevent overwriting similarly-named files.
@@ -447,7 +466,7 @@ def generate_wget_script(request):
                'the previous downloaded one they were skipped.\n' \
                'Please use the parameter \'download_structure\' ' \
                'to set up unique directories for them.'
-    if min(num_files, file_limit) > len(file_list):
+    if files_were_skipped:
         if warning_message:
             warning_message = '{}\n{}'.format(warning_message, skip_msg)
         else:
