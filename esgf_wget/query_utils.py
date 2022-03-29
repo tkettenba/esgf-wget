@@ -19,8 +19,9 @@ FROM = "from"
 TO = "to"
 SORT = "sort"
 SIMPLE = "simple"
+TOKEN = "bearer_token"
 
-KEYWORDS = [OFFSET, LIMIT, QUERY, DISTRIB, SHARDS, FROM, TO, SORT, SIMPLE]
+KEYWORDS = [OFFSET, LIMIT, QUERY, DISTRIB, SHARDS, FROM, TO, SORT, SIMPLE, TOKEN]
 
 # standard metadata fields, always included for each result (if available)
 FIELD_ID = "id"

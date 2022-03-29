@@ -7,5 +7,9 @@ download_files=(
 
 for i in "${download_files[@]}"
 do
+   {% if token %}
+   wget --header="Authorization: Bearer {{ token }}" $i
+   {% else %}
    wget $i
+   {% endif %}
 done

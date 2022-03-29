@@ -239,8 +239,11 @@ remove_from_cache() {
 }
 
 download() {
+    {% if token %}
+    wget="wget --header="Authorization: Bearer {{ token }}" ${insecure:+--no-check-certificate} ${quiet:+-q} ${quiet:--v}"
+    {% else %}
     wget="wget ${insecure:+--no-check-certificate} ${quiet:+-q} ${quiet:--v}"
-    
+    {% endif %}
     while read line
     do
         # read csv here document into proper variables

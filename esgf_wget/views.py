@@ -47,10 +47,15 @@ def generate_wget_script(request):
     else:
         return HttpResponseBadRequest('Request method must be POST or GET.')
 
+    bearer_token = None
+    if TOKEN in url_params:
+        bearer_token = url_params.pop(TOKEN)[0]
+
     # If no parameters were passed to the API,
     # then default to limit=1 and distrib=false
     if len(url_params.keys()) == 0:
         url_params.update(dict(limit=1, distrib='false'))
+
 
     # Catch invalid parameters
     for param in url_params.keys():
@@ -289,6 +294,7 @@ def generate_wget_script(request):
     # Fetch files for the query
     query_encoded = urllib.parse.urlencode(query_params, doseq=True).encode()
     req = urllib.request.Request(query_url, query_encoded)
+    print(f"{query_url}  {query_encoded}")
     with urllib.request.urlopen(req) as response:
         results = json.loads(response.read().decode())
 
@@ -364,6 +370,8 @@ def generate_wget_script(request):
                    url_params=url_params_list,
                    files=file_list,
                    warning_message=warning_message)
+    if bearer_token:
+        context['token'] = bearer_token
     wget_script = render(request, script_template_file, context)
 
     script_filename = current_datetime.strftime('wget-%Y%m%d%H%M%S.sh')
