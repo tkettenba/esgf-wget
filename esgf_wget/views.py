@@ -120,7 +120,7 @@ def generate_globus_script(request):
     return response
 
 
-def get_files(request):
+def get_files(url_params):
     query_url = settings.ESGF_SOLR_URL + '/files/select'
     file_limit = settings.WGET_SCRIPT_FILE_DEFAULT_LIMIT
     file_offset = 0
@@ -137,17 +137,6 @@ def get_files(request):
     querys = []
     file_query = ['type:File']
 
-    # Gather dataset_ids and other parameters
-    if request.method == 'POST':
-        url_params = request.POST.copy()
-    elif request.method == 'GET':
-        url_params = request.GET.copy()
-    else:
-        return HttpResponseBadRequest('Request method must be POST or GET.')
-
-    bearer_token = None
-    if TOKEN in url_params:
-        bearer_token = url_params.pop(TOKEN)[0]
 
     # If no parameters were passed to the API,
     # then default to limit=1 and distrib=false
@@ -410,7 +399,21 @@ def get_files(request):
 
 def generate_wget_script(request):
     script_template_file = 'wget-template.sh'
-    values = get_files(request)
+
+    # Gather dataset_ids and other parameters
+    if request.method == 'POST':
+        url_params = request.POST.copy()
+    elif request.method == 'GET':
+        url_params = request.GET.copy()
+    else:
+        return HttpResponseBadRequest('Request method must be POST or GET.')
+
+    bearer_token = None
+    if TOKEN in url_params:
+        bearer_token = url_params.pop(TOKEN)[0]
+
+
+    values = get_files(url_params)
     file_results = values["files"]
     wget_path_facets = values["wget_info"][0]
     wget_empty_path = values["wget_info"][1]
@@ -420,7 +423,9 @@ def generate_wget_script(request):
     file_list = {}
     files_were_skipped = False
     warning_message = None
-    
+
+
+
     num_files_listed = len(file_results)
     if num_files_found == 0:
         return HttpResponse('No files found for datasets.')
