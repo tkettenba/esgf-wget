@@ -48,7 +48,8 @@ def generateGlobusDownloadScript(download_map):
 def home(request):
     return HttpResponse('esgf-wget')
 
-
+@require_http_methods(['GET', 'POST'])
+@csrf_exempt
 def generate_globus_script(request):
     # create download map
     download_map = {}
@@ -119,8 +120,6 @@ def generate_globus_script(request):
     return response
 
 
-@require_http_methods(['GET', 'POST'])
-@csrf_exempt
 def get_files(request):
     query_url = settings.ESGF_SOLR_URL + '/files/select'
     file_limit = settings.WGET_SCRIPT_FILE_DEFAULT_LIMIT
@@ -401,7 +400,7 @@ def get_files(request):
 
     # Warning message about the number of files retrieved
     # being smaller than the total number found for the query
-    warning_message = None
+
     num_files_found = results['response']['numFound']
 
     values = {"files": results["response"]["docs"], "wget_info": [wget_path_facets, wget_empty_path, url_params_list],
@@ -420,6 +419,8 @@ def generate_wget_script(request):
     file_limit = values["file_info"][1]
     file_list = {}
     files_were_skipped = False
+    warning_message = None
+    
     num_files_listed = len(file_results)
     if num_files_found == 0:
         return HttpResponse('No files found for datasets.')
