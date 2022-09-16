@@ -221,16 +221,6 @@ def get_files(url_params):
         querys.append('*:*')
     query_string = ' AND '.join(querys)
 
-    # Create a simplified script that only runs wget on a list of files
-    if url_params.get(SIMPLE):
-        use_simple_param = url_params.pop(SIMPLE)[0].lower()
-        if use_simple_param == 'false':
-            script_template_file = 'wget-template.sh'
-        elif use_simple_param == 'true':
-            script_template_file = 'wget-simple-template.sh'
-        else:
-            msg = 'Parameter \"%s\" must be set to true or false.' % SIMPLE
-            return HttpResponseBadRequest(msg)
 
     # Enable distributed search
     if url_params.get(DISTRIB):
@@ -408,10 +398,21 @@ def generate_wget_script(request):
     else:
         return HttpResponseBadRequest('Request method must be POST or GET.')
 
+    # check for bearer token and set if present
     bearer_token = None
     if TOKEN in url_params:
         bearer_token = url_params.pop(TOKEN)[0]
 
+    # Create a simplified script that only runs wget on a list of files
+    if url_params.get(SIMPLE):
+        use_simple_param = url_params.pop(SIMPLE)[0].lower()
+        if use_simple_param == 'false':
+            script_template_file = 'wget-template.sh'
+        elif use_simple_param == 'true':
+            script_template_file = 'wget-simple-template.sh'
+        else:
+            msg = 'Parameter \"%s\" must be set to true or false.' % SIMPLE
+            return HttpResponseBadRequest(msg)
 
     values = get_files(url_params)
     file_results = values["files"]
